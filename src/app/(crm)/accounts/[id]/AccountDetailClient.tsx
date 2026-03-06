@@ -6,7 +6,7 @@ import Link from "next/link";
 import {
   Building2,
   Save,
-  Trash2,
+  Pencil,
   ArrowLeft,
   Users,
   DollarSign,
@@ -70,11 +70,12 @@ export default function AccountDetailClient({
   account: Account;
 }) {
   const router = useRouter();
+  const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState("");
 
-  const [form, setForm] = useState({
+  const initialForm = {
     name: account.name || "",
     industry: account.industry || "",
     type: account.type || "",
@@ -88,7 +89,9 @@ export default function AccountDetailClient({
     zip: account.zip || "",
     country: account.country || "",
     description: account.description || "",
-  });
+  };
+
+  const [form, setForm] = useState(initialForm);
 
   function updateField(field: string, value: string) {
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -136,6 +139,7 @@ export default function AccountDetailClient({
         throw new Error(data.error || "Failed to update account");
       }
 
+      setEditing(false);
       router.refresh();
       setSaving(false);
     } catch (err) {
@@ -145,7 +149,7 @@ export default function AccountDetailClient({
   }
 
   async function handleDelete() {
-    if (!confirm("Are you sure you want to delete this account?")) return;
+    if (!confirm("Are you sure you want to delete this account? This action cannot be undone.")) return;
 
     setDeleting(true);
     try {
@@ -163,6 +167,12 @@ export default function AccountDetailClient({
       setError(err instanceof Error ? err.message : "Something went wrong");
       setDeleting(false);
     }
+  }
+
+  function handleCancel() {
+    setForm(initialForm);
+    setEditing(false);
+    setError("");
   }
 
   return (
@@ -189,23 +199,35 @@ export default function AccountDetailClient({
           )}
         </div>
         <div className="flex items-center gap-2 flex-wrap">
-          <button
-            onClick={handleDelete}
-            disabled={deleting}
-            className="bc-btn bc-btn-destructive"
-          >
-            <Trash2 className="w-4 h-4" />
-            {deleting ? "Deleting..." : "Delete"}
-          </button>
-          <button
-            type="submit"
-            form="edit-account-form"
-            disabled={saving}
-            className="bc-btn bc-btn-primary"
-          >
-            <Save className="w-4 h-4" />
-            {saving ? "Saving..." : "Save"}
-          </button>
+          {editing ? (
+            <>
+              <button
+                type="button"
+                onClick={handleCancel}
+                className="bc-btn bc-btn-neutral"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                form="edit-account-form"
+                disabled={saving}
+                className="bc-btn bc-btn-primary"
+              >
+                <Save className="w-4 h-4" />
+                {saving ? "Saving..." : "Save"}
+              </button>
+            </>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setEditing(true)}
+              className="bc-btn bc-btn-neutral"
+            >
+              <Pencil className="w-4 h-4" />
+              Edit
+            </button>
+          )}
         </div>
       </div>
 
@@ -223,70 +245,106 @@ export default function AccountDetailClient({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label htmlFor="name" className="bc-label">
-                  Account Name <span className="text-red-500">*</span>
+                  Account Name {editing && <span className="text-red-500">*</span>}
                 </label>
-                <input
-                  id="name"
-                  type="text"
-                  className="bc-input"
-                  value={form.name}
-                  onChange={(e) => updateField("name", e.target.value)}
-                  required
-                />
+                {editing ? (
+                  <input
+                    id="name"
+                    type="text"
+                    className="bc-input"
+                    value={form.name}
+                    onChange={(e) => updateField("name", e.target.value)}
+                    required
+                  />
+                ) : (
+                  <p className="text-sm text-[#3E3E3C] py-1">{account.name}</p>
+                )}
               </div>
               <div>
                 <label htmlFor="industry" className="bc-label">
                   Industry
                 </label>
-                <input
-                  id="industry"
-                  type="text"
-                  className="bc-input"
-                  value={form.industry}
-                  onChange={(e) => updateField("industry", e.target.value)}
-                />
+                {editing ? (
+                  <input
+                    id="industry"
+                    type="text"
+                    className="bc-input"
+                    value={form.industry}
+                    onChange={(e) => updateField("industry", e.target.value)}
+                  />
+                ) : (
+                  <p className="text-sm text-[#3E3E3C] py-1">{account.industry || "--"}</p>
+                )}
               </div>
               <div>
                 <label htmlFor="type" className="bc-label">
                   Type
                 </label>
-                <select
-                  id="type"
-                  className="bc-input"
-                  value={form.type}
-                  onChange={(e) => updateField("type", e.target.value)}
-                >
-                  {typeOptions.map((t) => (
-                    <option key={t} value={t}>
-                      {t || "-- None --"}
-                    </option>
-                  ))}
-                </select>
+                {editing ? (
+                  <select
+                    id="type"
+                    className="bc-input"
+                    value={form.type}
+                    onChange={(e) => updateField("type", e.target.value)}
+                  >
+                    {typeOptions.map((t) => (
+                      <option key={t} value={t}>
+                        {t || "-- None --"}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <p className="text-sm py-1">
+                    {account.type ? (
+                      <span className={`bc-badge ${typeBadgeColors[account.type] || typeBadgeColors.Other}`}>
+                        {account.type}
+                      </span>
+                    ) : (
+                      <span className="text-[#3E3E3C]">--</span>
+                    )}
+                  </p>
+                )}
               </div>
               <div>
                 <label htmlFor="website" className="bc-label">
                   Website
                 </label>
-                <input
-                  id="website"
-                  type="text"
-                  className="bc-input"
-                  value={form.website}
-                  onChange={(e) => updateField("website", e.target.value)}
-                  placeholder="https://"
-                />
+                {editing ? (
+                  <input
+                    id="website"
+                    type="text"
+                    className="bc-input"
+                    value={form.website}
+                    onChange={(e) => updateField("website", e.target.value)}
+                    placeholder="https://"
+                  />
+                ) : (
+                  <p className="text-sm py-1">
+                    {account.website ? (
+                      <a href={account.website} target="_blank" rel="noopener noreferrer" className="text-[#0070D2] hover:text-[#005FB2]">
+                        {account.website}
+                      </a>
+                    ) : (
+                      <span className="text-[#3E3E3C]">--</span>
+                    )}
+                  </p>
+                )}
               </div>
               <div>
                 <label htmlFor="phone" className="bc-label">
                   Phone
                 </label>
-                <input
-                  id="phone"
-                  type="text"
-                  className="bc-input"
-                  value={form.phone}
-                  onChange={(e) => updateField("phone", e.target.value)}
-                />
+                {editing ? (
+                  <input
+                    id="phone"
+                    type="text"
+                    className="bc-input"
+                    value={form.phone}
+                    onChange={(e) => updateField("phone", e.target.value)}
+                  />
+                ) : (
+                  <p className="text-sm text-[#3E3E3C] py-1">{account.phone || "--"}</p>
+                )}
               </div>
               <div>
                 <label className="bc-label">Owner</label>
@@ -307,28 +365,40 @@ export default function AccountDetailClient({
                 <label htmlFor="employees" className="bc-label">
                   Employees
                 </label>
-                <input
-                  id="employees"
-                  type="number"
-                  className="bc-input"
-                  value={form.employees}
-                  onChange={(e) => updateField("employees", e.target.value)}
-                  min="0"
-                />
+                {editing ? (
+                  <input
+                    id="employees"
+                    type="number"
+                    className="bc-input"
+                    value={form.employees}
+                    onChange={(e) => updateField("employees", e.target.value)}
+                    min="0"
+                  />
+                ) : (
+                  <p className="text-sm text-[#3E3E3C] py-1">
+                    {account.employees != null ? account.employees.toLocaleString() : "--"}
+                  </p>
+                )}
               </div>
               <div>
                 <label htmlFor="annualRevenue" className="bc-label">
                   Annual Revenue
                 </label>
-                <input
-                  id="annualRevenue"
-                  type="number"
-                  className="bc-input"
-                  value={form.annualRevenue}
-                  onChange={(e) => updateField("annualRevenue", e.target.value)}
-                  min="0"
-                  step="0.01"
-                />
+                {editing ? (
+                  <input
+                    id="annualRevenue"
+                    type="number"
+                    className="bc-input"
+                    value={form.annualRevenue}
+                    onChange={(e) => updateField("annualRevenue", e.target.value)}
+                    min="0"
+                    step="0.01"
+                  />
+                ) : (
+                  <p className="text-sm text-[#3E3E3C] py-1">
+                    {account.annualRevenue != null ? formatCurrency(account.annualRevenue) : "--"}
+                  </p>
+                )}
               </div>
             </div>
           </div>
@@ -343,61 +413,81 @@ export default function AccountDetailClient({
                 <label htmlFor="address" className="bc-label">
                   Street Address
                 </label>
-                <input
-                  id="address"
-                  type="text"
-                  className="bc-input"
-                  value={form.address}
-                  onChange={(e) => updateField("address", e.target.value)}
-                />
+                {editing ? (
+                  <input
+                    id="address"
+                    type="text"
+                    className="bc-input"
+                    value={form.address}
+                    onChange={(e) => updateField("address", e.target.value)}
+                  />
+                ) : (
+                  <p className="text-sm text-[#3E3E3C] py-1">{account.address || "--"}</p>
+                )}
               </div>
               <div>
                 <label htmlFor="city" className="bc-label">
                   City
                 </label>
-                <input
-                  id="city"
-                  type="text"
-                  className="bc-input"
-                  value={form.city}
-                  onChange={(e) => updateField("city", e.target.value)}
-                />
+                {editing ? (
+                  <input
+                    id="city"
+                    type="text"
+                    className="bc-input"
+                    value={form.city}
+                    onChange={(e) => updateField("city", e.target.value)}
+                  />
+                ) : (
+                  <p className="text-sm text-[#3E3E3C] py-1">{account.city || "--"}</p>
+                )}
               </div>
               <div>
                 <label htmlFor="state" className="bc-label">
                   State / Province
                 </label>
-                <input
-                  id="state"
-                  type="text"
-                  className="bc-input"
-                  value={form.state}
-                  onChange={(e) => updateField("state", e.target.value)}
-                />
+                {editing ? (
+                  <input
+                    id="state"
+                    type="text"
+                    className="bc-input"
+                    value={form.state}
+                    onChange={(e) => updateField("state", e.target.value)}
+                  />
+                ) : (
+                  <p className="text-sm text-[#3E3E3C] py-1">{account.state || "--"}</p>
+                )}
               </div>
               <div>
                 <label htmlFor="zip" className="bc-label">
                   Zip / Postal Code
                 </label>
-                <input
-                  id="zip"
-                  type="text"
-                  className="bc-input"
-                  value={form.zip}
-                  onChange={(e) => updateField("zip", e.target.value)}
-                />
+                {editing ? (
+                  <input
+                    id="zip"
+                    type="text"
+                    className="bc-input"
+                    value={form.zip}
+                    onChange={(e) => updateField("zip", e.target.value)}
+                  />
+                ) : (
+                  <p className="text-sm text-[#3E3E3C] py-1">{account.zip || "--"}</p>
+                )}
               </div>
               <div>
                 <label htmlFor="country" className="bc-label">
                   Country
                 </label>
-                <input
-                  id="country"
-                  type="text"
-                  className="bc-input"
-                  value={form.country}
-                  onChange={(e) => updateField("country", e.target.value)}
-                />
+                {editing ? (
+                  <input
+                    id="country"
+                    type="text"
+                    className="bc-input"
+                    value={form.country}
+                    onChange={(e) => updateField("country", e.target.value)}
+                  />
+                ) : (
+                  <p className="text-sm text-[#3E3E3C] py-1">{account.country || "--"}</p>
+                )}
               </div>
             </div>
           </div>
@@ -407,10 +497,7 @@ export default function AccountDetailClient({
         <div className="bc-card mb-4">
           <div className="bc-section-header">Description</div>
           <div className="p-4">
-            <div>
-              <label htmlFor="description" className="bc-label">
-                Description
-              </label>
+            {editing ? (
               <textarea
                 id="description"
                 className="bc-input"
@@ -418,10 +505,29 @@ export default function AccountDetailClient({
                 value={form.description}
                 onChange={(e) => updateField("description", e.target.value)}
               />
-            </div>
+            ) : (
+              <p className="text-sm text-[#3E3E3C] whitespace-pre-wrap">
+                {account.description || "No description provided."}
+              </p>
+            )}
           </div>
         </div>
       </form>
+
+      {/* System Information */}
+      <div className="bc-card mb-4">
+        <div className="bc-section-header">System Information</div>
+        <div className="p-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <span className="bc-label">Created</span>
+            <p className="text-sm text-[#3E3E3C] py-1">{formatDate(account.createdAt)}</p>
+          </div>
+          <div>
+            <span className="bc-label">Last Modified</span>
+            <p className="text-sm text-[#3E3E3C] py-1">{formatDate(account.updatedAt)}</p>
+          </div>
+        </div>
+      </div>
 
       {/* Related Contacts */}
       <div className="bc-card mb-4">
@@ -541,6 +647,18 @@ export default function AccountDetailClient({
             </tbody>
           </table>
         </div>
+      </div>
+
+      {/* Danger Zone */}
+      <div className="mt-8 pt-4 border-t border-[#DDDBDA]">
+        <button
+          type="button"
+          onClick={handleDelete}
+          disabled={deleting}
+          className="text-sm text-red-500 hover:text-red-700 transition-colors"
+        >
+          {deleting ? "Deleting..." : "Delete this account"}
+        </button>
       </div>
     </div>
   );

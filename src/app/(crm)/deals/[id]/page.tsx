@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { Save, Trash2, ArrowLeft } from "lucide-react";
+import { Save, Pencil, ArrowLeft } from "lucide-react";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import IntegrationActions from "@/components/integrations/IntegrationActions";
 
@@ -53,7 +53,10 @@ export default function DealDetailPage() {
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [pipelines, setPipelines] = useState<Pipeline[]>([]);
   const [loading, setLoading] = useState(true);
+  const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [error, setError] = useState("");
   const [form, setForm] = useState({
     name: "",
     amount: "",
@@ -101,29 +104,63 @@ export default function DealDetailPage() {
 
   const handleSave = async () => {
     setSaving(true);
-    const res = await fetch(`/api/deals/${params.id}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        ...form,
-        amount: form.amount ? parseFloat(form.amount) : null,
-        probability: form.probability ? parseInt(form.probability) : null,
-        closeDate: form.closeDate || null,
-        accountId: form.accountId || null,
-        contactId: form.contactId || null,
-      }),
-    });
-    if (res.ok) {
-      const updated = await res.json();
-      setDeal(updated);
+    setError("");
+    try {
+      const res = await fetch(`/api/deals/${params.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...form,
+          amount: form.amount ? parseFloat(form.amount) : null,
+          probability: form.probability ? parseInt(form.probability) : null,
+          closeDate: form.closeDate || null,
+          accountId: form.accountId || null,
+          contactId: form.contactId || null,
+        }),
+      });
+      if (res.ok) {
+        const updated = await res.json();
+        setDeal(updated);
+        setEditing(false);
+      } else {
+        const data = await res.json();
+        setError(data.error || "Failed to update deal");
+      }
+    } catch {
+      setError("Something went wrong");
     }
     setSaving(false);
   };
 
   const handleDelete = async () => {
-    if (!confirm("Are you sure you want to delete this deal?")) return;
+    if (!confirm("Are you sure you want to delete this deal? This action cannot be undone.")) return;
+    setDeleting(true);
     const res = await fetch(`/api/deals/${params.id}`, { method: "DELETE" });
-    if (res.ok) router.push("/deals");
+    if (res.ok) {
+      router.push("/deals");
+    } else {
+      setDeleting(false);
+    }
+  };
+
+  const handleCancel = () => {
+    if (deal) {
+      setForm({
+        name: deal.name || "",
+        amount: deal.amount?.toString() || "",
+        closeDate: deal.closeDate ? deal.closeDate.split("T")[0] : "",
+        probability: deal.probability?.toString() || "",
+        type: deal.type || "",
+        source: deal.source || "",
+        description: deal.description || "",
+        stageId: deal.stageId || "",
+        pipelineId: deal.pipelineId || "",
+        accountId: deal.accountId || "",
+        contactId: deal.contactId || "",
+      });
+    }
+    setEditing(false);
+    setError("");
   };
 
   if (loading) {
@@ -158,25 +195,44 @@ export default function DealDetailPage() {
           )}
         </div>
         <div className="flex gap-2 flex-wrap">
-          <button
-            onClick={handleDelete}
-            className="bc-btn bc-btn-destructive"
-          >
-            <Trash2 className="w-4 h-4" />
-            Delete
-          </button>
-          <button
-            onClick={handleSave}
-            disabled={saving}
-            className="bc-btn bc-btn-primary"
-          >
-            <Save className="w-4 h-4" />
-            {saving ? "Saving..." : "Save"}
-          </button>
+          {editing ? (
+            <>
+              <button
+                type="button"
+                onClick={handleCancel}
+                className="bc-btn bc-btn-neutral"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSave}
+                disabled={saving}
+                className="bc-btn bc-btn-primary"
+              >
+                <Save className="w-4 h-4" />
+                {saving ? "Saving..." : "Save"}
+              </button>
+            </>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setEditing(true)}
+              className="bc-btn bc-btn-neutral"
+            >
+              <Pencil className="w-4 h-4" />
+              Edit
+            </button>
+          )}
         </div>
       </div>
 
-      {/* Stage Path */}
+      {error && (
+        <div className="bg-red-50 text-red-700 text-sm px-4 py-3 rounded border border-red-200 mb-4">
+          {error}
+        </div>
+      )}
+
+      {/* Stage Path - always interactive for quick stage changes */}
       <div className="bc-card mb-6 p-4 overflow-x-auto">
         <div className="flex items-center gap-1 min-w-0">
           {stages.map((stage, i) => {
@@ -186,13 +242,14 @@ export default function DealDetailPage() {
             return (
               <button
                 key={stage.id}
-                onClick={() =>
+                onClick={() => {
                   setForm((f) => ({
                     ...f,
                     stageId: stage.id,
                     probability: stage.probability.toString(),
-                  }))
-                }
+                  }));
+                  if (!editing) setEditing(true);
+                }}
                 className="flex-1 relative py-2 px-3 text-xs font-semibold text-center transition-colors rounded"
                 style={{
                   backgroundColor: isCurrent
@@ -220,9 +277,9 @@ export default function DealDetailPage() {
       {deal.contact && (
         <div className="mb-4">
           <IntegrationActions
-            email={deal.contact ? undefined : undefined}
+            email={undefined}
             phone={undefined}
-            name={deal.contact ? `${deal.contact.firstName} ${deal.contact.lastName}` : undefined}
+            name={`${deal.contact.firstName} ${deal.contact.lastName}`}
             dealId={deal.id}
             contactId={deal.contact?.id}
           />
@@ -234,69 +291,99 @@ export default function DealDetailPage() {
         <div className="bc-section-header">Deal Information</div>
         <div className="p-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label className="bc-label">Deal Name</label>
-            <input
-              className="bc-input"
-              value={form.name}
-              onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-            />
+            <label className="bc-label">Deal Name {editing && <span className="text-red-500">*</span>}</label>
+            {editing ? (
+              <input
+                className="bc-input"
+                value={form.name}
+                onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
+              />
+            ) : (
+              <p className="text-sm text-[#3E3E3C] py-1">{deal.name}</p>
+            )}
           </div>
           <div>
             <label className="bc-label">Type</label>
-            <select
-              className="bc-input"
-              value={form.type}
-              onChange={(e) => setForm((f) => ({ ...f, type: e.target.value }))}
-            >
-              <option value="">-- Select --</option>
-              <option value="New Business">New Business</option>
-              <option value="Existing Business">Existing Business</option>
-            </select>
+            {editing ? (
+              <select
+                className="bc-input"
+                value={form.type}
+                onChange={(e) => setForm((f) => ({ ...f, type: e.target.value }))}
+              >
+                <option value="">-- Select --</option>
+                <option value="New Business">New Business</option>
+                <option value="Existing Business">Existing Business</option>
+              </select>
+            ) : (
+              <p className="text-sm text-[#3E3E3C] py-1">{deal.type || "--"}</p>
+            )}
           </div>
           <div>
             <label className="bc-label">Amount</label>
-            <input
-              className="bc-input"
-              type="number"
-              value={form.amount}
-              onChange={(e) =>
-                setForm((f) => ({ ...f, amount: e.target.value }))
-              }
-            />
+            {editing ? (
+              <input
+                className="bc-input"
+                type="number"
+                value={form.amount}
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, amount: e.target.value }))
+                }
+              />
+            ) : (
+              <p className="text-sm text-[#3E3E3C] py-1">
+                {deal.amount != null ? formatCurrency(deal.amount) : "--"}
+              </p>
+            )}
           </div>
           <div>
             <label className="bc-label">Close Date</label>
-            <input
-              className="bc-input"
-              type="date"
-              value={form.closeDate}
-              onChange={(e) =>
-                setForm((f) => ({ ...f, closeDate: e.target.value }))
-              }
-            />
+            {editing ? (
+              <input
+                className="bc-input"
+                type="date"
+                value={form.closeDate}
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, closeDate: e.target.value }))
+                }
+              />
+            ) : (
+              <p className="text-sm text-[#3E3E3C] py-1">
+                {deal.closeDate ? formatDate(deal.closeDate) : "--"}
+              </p>
+            )}
           </div>
           <div>
             <label className="bc-label">Probability (%)</label>
-            <input
-              className="bc-input"
-              type="number"
-              min="0"
-              max="100"
-              value={form.probability}
-              onChange={(e) =>
-                setForm((f) => ({ ...f, probability: e.target.value }))
-              }
-            />
+            {editing ? (
+              <input
+                className="bc-input"
+                type="number"
+                min="0"
+                max="100"
+                value={form.probability}
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, probability: e.target.value }))
+                }
+              />
+            ) : (
+              <p className="text-sm text-[#3E3E3C] py-1">
+                {deal.probability != null ? `${deal.probability}%` : "--"}
+              </p>
+            )}
           </div>
           <div>
             <label className="bc-label">Source</label>
-            <input
-              className="bc-input"
-              value={form.source}
-              onChange={(e) =>
-                setForm((f) => ({ ...f, source: e.target.value }))
-              }
-            />
+            {editing ? (
+              <input
+                className="bc-input"
+                value={form.source}
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, source: e.target.value }))
+                }
+              />
+            ) : (
+              <p className="text-sm text-[#3E3E3C] py-1">{deal.source || "--"}</p>
+            )}
           </div>
         </div>
       </div>
@@ -307,86 +394,128 @@ export default function DealDetailPage() {
         <div className="p-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label className="bc-label">Account</label>
-            <select
-              className="bc-input"
-              value={form.accountId}
-              onChange={(e) =>
-                setForm((f) => ({ ...f, accountId: e.target.value }))
-              }
-            >
-              <option value="">-- None --</option>
-              {accounts.map((a) => (
-                <option key={a.id} value={a.id}>
-                  {a.name}
-                </option>
-              ))}
-            </select>
+            {editing ? (
+              <select
+                className="bc-input"
+                value={form.accountId}
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, accountId: e.target.value }))
+                }
+              >
+                <option value="">-- None --</option>
+                {accounts.map((a) => (
+                  <option key={a.id} value={a.id}>
+                    {a.name}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <p className="text-sm py-1">
+                {deal.account ? (
+                  <Link href={`/accounts/${deal.account.id}`} className="text-[#0070D2] hover:text-[#005FB2]">
+                    {deal.account.name}
+                  </Link>
+                ) : (
+                  <span className="text-[#3E3E3C]">--</span>
+                )}
+              </p>
+            )}
           </div>
           <div>
             <label className="bc-label">Contact</label>
-            <select
-              className="bc-input"
-              value={form.contactId}
-              onChange={(e) =>
-                setForm((f) => ({ ...f, contactId: e.target.value }))
-              }
-            >
-              <option value="">-- None --</option>
-              {contacts.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.firstName} {c.lastName}
-                </option>
-              ))}
-            </select>
+            {editing ? (
+              <select
+                className="bc-input"
+                value={form.contactId}
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, contactId: e.target.value }))
+                }
+              >
+                <option value="">-- None --</option>
+                {contacts.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.firstName} {c.lastName}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <p className="text-sm py-1">
+                {deal.contact ? (
+                  <Link href={`/contacts/${deal.contact.id}`} className="text-[#0070D2] hover:text-[#005FB2]">
+                    {deal.contact.firstName} {deal.contact.lastName}
+                  </Link>
+                ) : (
+                  <span className="text-[#3E3E3C]">--</span>
+                )}
+              </p>
+            )}
           </div>
           <div>
             <label className="bc-label">Pipeline</label>
-            <select
-              className="bc-input"
-              value={form.pipelineId}
-              onChange={(e) => {
-                const pid = e.target.value;
-                const pl = pipelines.find((p) => p.id === pid);
-                const firstStage = pl?.stages?.sort(
-                  (a, b) => a.order - b.order
-                )[0];
-                setForm((f) => ({
-                  ...f,
-                  pipelineId: pid,
-                  stageId: firstStage?.id || "",
-                  probability: firstStage?.probability?.toString() || "",
-                }));
-              }}
-            >
-              <option value="">-- Select --</option>
-              {pipelines.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.name}
-                </option>
-              ))}
-            </select>
+            {editing ? (
+              <select
+                className="bc-input"
+                value={form.pipelineId}
+                onChange={(e) => {
+                  const pid = e.target.value;
+                  const pl = pipelines.find((p) => p.id === pid);
+                  const firstStage = pl?.stages?.sort(
+                    (a, b) => a.order - b.order
+                  )[0];
+                  setForm((f) => ({
+                    ...f,
+                    pipelineId: pid,
+                    stageId: firstStage?.id || "",
+                    probability: firstStage?.probability?.toString() || "",
+                  }));
+                }}
+              >
+                <option value="">-- Select --</option>
+                {pipelines.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.name}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <p className="text-sm text-[#3E3E3C] py-1">{deal.pipeline?.name || "--"}</p>
+            )}
           </div>
           <div>
             <label className="bc-label">Stage</label>
-            <select
-              className="bc-input"
-              value={form.stageId}
-              onChange={(e) => {
-                const stage = stages.find((s) => s.id === e.target.value);
-                setForm((f) => ({
-                  ...f,
-                  stageId: e.target.value,
-                  probability: stage?.probability?.toString() || f.probability,
-                }));
-              }}
-            >
-              <option value="">-- Select --</option>
-              {stages.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.name} ({s.probability}%)
-                </option>
-              ))}
-            </select>
+            {editing ? (
+              <select
+                className="bc-input"
+                value={form.stageId}
+                onChange={(e) => {
+                  const stage = stages.find((s) => s.id === e.target.value);
+                  setForm((f) => ({
+                    ...f,
+                    stageId: e.target.value,
+                    probability: stage?.probability?.toString() || f.probability,
+                  }));
+                }}
+              >
+                <option value="">-- Select --</option>
+                {stages.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.name} ({s.probability}%)
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <p className="text-sm py-1">
+                <span
+                  className="bc-badge"
+                  style={{
+                    backgroundColor: `${deal.stage.color}20`,
+                    color: deal.stage.color,
+                  }}
+                >
+                  {deal.stage.name}
+                </span>
+              </p>
+            )}
           </div>
         </div>
       </div>
@@ -395,51 +524,47 @@ export default function DealDetailPage() {
       <div className="bc-card mb-4">
         <div className="bc-section-header">Description</div>
         <div className="p-4">
-          <textarea
-            className="bc-input min-h-[100px]"
-            value={form.description}
-            onChange={(e) =>
-              setForm((f) => ({ ...f, description: e.target.value }))
-            }
-          />
+          {editing ? (
+            <textarea
+              className="bc-input min-h-[100px]"
+              value={form.description}
+              onChange={(e) =>
+                setForm((f) => ({ ...f, description: e.target.value }))
+              }
+            />
+          ) : (
+            <p className="text-sm text-[#3E3E3C] whitespace-pre-wrap">
+              {deal.description || "No description provided."}
+            </p>
+          )}
         </div>
       </div>
 
       {/* Details */}
-      <div className="bc-card">
-        <div className="bc-section-header">Details</div>
+      <div className="bc-card mb-4">
+        <div className="bc-section-header">System Information</div>
         <div className="p-4 grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
           <div>
-            <span className="text-[#706E6B]">Created:</span>{" "}
-            {formatDate(deal.createdAt)}
+            <span className="bc-label">Created</span>
+            <p className="text-sm text-[#3E3E3C] py-1">{formatDate(deal.createdAt)}</p>
           </div>
           <div>
-            <span className="text-[#706E6B]">Last Modified:</span>{" "}
-            {formatDate(deal.updatedAt)}
+            <span className="bc-label">Last Modified</span>
+            <p className="text-sm text-[#3E3E3C] py-1">{formatDate(deal.updatedAt)}</p>
           </div>
-          {deal.account && (
-            <div>
-              <span className="text-[#706E6B]">Account:</span>{" "}
-              <Link
-                href={`/accounts/${deal.account.id}`}
-                className="text-[#0070D2] hover:text-[#005FB2]"
-              >
-                {deal.account.name}
-              </Link>
-            </div>
-          )}
-          {deal.contact && (
-            <div>
-              <span className="text-[#706E6B]">Contact:</span>{" "}
-              <Link
-                href={`/contacts/${deal.contact.id}`}
-                className="text-[#0070D2] hover:text-[#005FB2]"
-              >
-                {deal.contact.firstName} {deal.contact.lastName}
-              </Link>
-            </div>
-          )}
         </div>
+      </div>
+
+      {/* Danger Zone */}
+      <div className="mt-8 pt-4 border-t border-[#DDDBDA]">
+        <button
+          type="button"
+          onClick={handleDelete}
+          disabled={deleting}
+          className="text-sm text-red-500 hover:text-red-700 transition-colors"
+        >
+          {deleting ? "Deleting..." : "Delete this deal"}
+        </button>
       </div>
     </div>
   );
