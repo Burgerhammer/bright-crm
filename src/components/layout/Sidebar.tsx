@@ -52,6 +52,7 @@ export default function Sidebar({
             { label: "New Contact", href: "/contacts/new" },
             { label: "New Account", href: "/accounts/new" },
             { label: "New Deal", href: "/deals/new" },
+            { label: "New Task", href: "/tasks/new" },
           ].map((item) => (
             <Link
               key={item.href}

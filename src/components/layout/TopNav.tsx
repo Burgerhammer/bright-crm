@@ -14,6 +14,8 @@ import {
   Search,
   Phone,
   Menu,
+  CheckSquare,
+  ArrowUpDown,
 } from "lucide-react";
 import { signOut } from "next-auth/react";
 import { cn } from "@/lib/utils";
@@ -24,6 +26,8 @@ const tabs = [
   { name: "Contacts", href: "/contacts", icon: UserCircle },
   { name: "Accounts", href: "/accounts", icon: Building2 },
   { name: "Deals", href: "/deals", icon: DollarSign },
+  { name: "Tasks", href: "/tasks", icon: CheckSquare },
+  { name: "Import", href: "/import", icon: ArrowUpDown },
   { name: "Reports", href: "/reports", icon: BarChart3 },
   { name: "Settings", href: "/settings", icon: Settings },
 ];

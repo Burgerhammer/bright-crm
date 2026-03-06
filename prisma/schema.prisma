@@ -25,6 +25,7 @@ model User {
   deals        Deal[]
   activities   Activity[]
   notes        Note[]
+  tasks        Task[]
   integrations Integration[]
 }
 
@@ -70,6 +71,7 @@ model Lead {
   updatedAt   DateTime @updatedAt
   activities  Activity[]
   notes       Note[]
+  tasks       Task[]
 }
 
 model Contact {
@@ -96,6 +98,7 @@ model Contact {
   deals       Deal[]
   activities  Activity[]
   notes       Note[]
+  tasks       Task[]
 }
 
 model Account {
@@ -121,6 +124,7 @@ model Account {
   deals         Deal[]
   activities    Activity[]
   notes         Note[]
+  tasks         Task[]
 }
 
 model Pipeline {
@@ -169,6 +173,7 @@ model Deal {
   updatedAt   DateTime @updatedAt
   activities  Activity[]
   notes       Note[]
+  tasks       Task[]
 }
 
 model Activity {
@@ -208,4 +213,30 @@ model Note {
   updatedAt     DateTime @updatedAt
   ownerId       String?
   owner         User?    @relation(fields: [ownerId], references: [id])
+}
+
+model Task {
+  id          String    @id @default(cuid())
+  title       String
+  description String?
+  status      String    @default("Open") // Open, In Progress, Completed, Cancelled
+  priority    String    @default("Medium") // High, Medium, Low
+  dueDate     DateTime?
+  completedAt DateTime?
+
+  // Relations - all optional, a task can be standalone
+  leadId    String?
+  lead      Lead?    @relation(fields: [leadId], references: [id], onDelete: SetNull)
+  contactId String?
+  contact   Contact? @relation(fields: [contactId], references: [id], onDelete: SetNull)
+  accountId String?
+  account   Account? @relation(fields: [accountId], references: [id], onDelete: SetNull)
+  dealId    String?
+  deal      Deal?    @relation(fields: [dealId], references: [id], onDelete: SetNull)
+
+  ownerId   String
+  owner     User     @relation(fields: [ownerId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
