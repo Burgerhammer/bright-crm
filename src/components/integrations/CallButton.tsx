@@ -25,19 +25,26 @@ export default function CallButton({
     setCalling(true);
     setStatus("calling");
 
-    const res = await fetch("/api/integrations/twilio/call", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ to: phoneNumber, contactId, dealId, leadId }),
-    });
+    try {
+      const res = await fetch("/api/integrations/twilio/call", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ to: phoneNumber, contactId, dealId, leadId }),
+      });
 
-    if (res.ok) {
-      setStatus("success");
-      onCalled?.();
-      setTimeout(() => setStatus("idle"), 3000);
-    } else {
-      setStatus("error");
-      setTimeout(() => setStatus("idle"), 3000);
+      if (res.ok) {
+        setStatus("success");
+        onCalled?.();
+        setTimeout(() => setStatus("idle"), 3000);
+      } else {
+        // Twilio not configured — use native dialer
+        window.location.href = `tel:${phoneNumber}`;
+        setStatus("idle");
+      }
+    } catch {
+      // No integration available — use native dialer
+      window.location.href = `tel:${phoneNumber}`;
+      setStatus("idle");
     }
 
     setCalling(false);

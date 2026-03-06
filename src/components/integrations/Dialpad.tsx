@@ -108,6 +108,7 @@ export default function Dialpad({
   const handleCall = async () => {
     if (!number.trim() || calling) return;
 
+    // Try Twilio first, fall back to native tel: link
     setCalling(true);
     setCallStatus("calling");
     setCallDuration(0);
@@ -122,12 +123,14 @@ export default function Dialpad({
       if (res.ok) {
         setCallStatus("connected");
       } else {
-        const data = await res.json();
-        setCallStatus("failed");
-        console.error("Call failed:", data.error);
+        // Twilio not configured or call failed — use native dialer
+        window.location.href = `tel:${number}`;
+        setCallStatus("idle");
       }
     } catch {
-      setCallStatus("failed");
+      // No integration available — use native dialer
+      window.location.href = `tel:${number}`;
+      setCallStatus("idle");
     }
 
     setCalling(false);
