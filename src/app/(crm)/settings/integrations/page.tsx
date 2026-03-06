@@ -16,6 +16,10 @@ import {
   Unplug,
   Headphones,
   Mic,
+  Sparkles,
+  Brain,
+  MessageCircle,
+  Trash2,
 } from "lucide-react";
 
 interface GoogleStatus {
@@ -34,6 +38,10 @@ interface DialpadStatus {
   miniDialerUrl?: string | null;
 }
 
+interface AnthropicStatus {
+  connected: boolean;
+}
+
 export default function IntegrationsPage() {
   const searchParams = useSearchParams();
   const justConnected = searchParams.get("connected");
@@ -41,6 +49,10 @@ export default function IntegrationsPage() {
   const [googleStatus, setGoogleStatus] = useState<GoogleStatus | null>(null);
   const [twilioStatus, setTwilioStatus] = useState<TwilioStatus | null>(null);
   const [dialpadStatus, setDialpadStatus] = useState<DialpadStatus | null>(null);
+  const [anthropicStatus, setAnthropicStatus] = useState<AnthropicStatus | null>(null);
+  const [anthropicKey, setAnthropicKey] = useState("");
+  const [anthropicSaving, setAnthropicSaving] = useState(false);
+  const [anthropicRemoving, setAnthropicRemoving] = useState(false);
   const [connecting, setConnecting] = useState(false);
   const [disconnecting, setDisconnecting] = useState(false);
   const [dialpadConnecting, setDialpadConnecting] = useState(false);
@@ -64,6 +76,12 @@ export default function IntegrationsPage() {
       .then((r) => r.json())
       .then(setDialpadStatus)
       .catch(() => setDialpadStatus({ connected: false, configured: false }));
+
+    // Check Anthropic status
+    fetch("/api/integrations/anthropic")
+      .then((r) => r.json())
+      .then(setAnthropicStatus)
+      .catch(() => setAnthropicStatus({ connected: false }));
   }, []);
 
   const handleConnectGoogle = async () => {
@@ -100,6 +118,44 @@ export default function IntegrationsPage() {
       setDialpadStatus({ connected: false, configured: dialpadStatus?.configured ?? false });
     }
     setDialpadDisconnecting(false);
+  };
+
+  const handleSaveAnthropicKey = async () => {
+    if (!anthropicKey.trim()) return;
+    setAnthropicSaving(true);
+    try {
+      const res = await fetch("/api/integrations/anthropic", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ apiKey: anthropicKey.trim() }),
+      });
+      if (res.ok) {
+        setAnthropicStatus({ connected: true });
+        setAnthropicKey("");
+      } else {
+        const data = await res.json();
+        alert(data.error || "Failed to save API key");
+      }
+    } catch {
+      alert("Failed to save API key");
+    }
+    setAnthropicSaving(false);
+  };
+
+  const handleRemoveAnthropicKey = async () => {
+    if (!confirm("Remove your Anthropic API key? AI CoPilot will stop working.")) return;
+    setAnthropicRemoving(true);
+    try {
+      const res = await fetch("/api/integrations/anthropic", {
+        method: "DELETE",
+      });
+      if (res.ok) {
+        setAnthropicStatus({ connected: false });
+      }
+    } catch {
+      alert("Failed to remove API key");
+    }
+    setAnthropicRemoving(false);
   };
 
   const handleDisconnectGoogle = async () => {
@@ -426,6 +482,115 @@ export default function IntegrationsPage() {
                   <ExternalLink className="w-4 h-4" />
                   Dialpad Developer Docs
                 </a>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Anthropic (Claude AI) Integration */}
+        <div className="bc-card">
+          <div className="bc-section-header flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 bg-[#D4A27F] rounded flex items-center justify-center">
+                <Sparkles className="w-4 h-4 text-white" />
+              </div>
+              Anthropic (Claude AI)
+            </div>
+            {anthropicStatus?.connected ? (
+              <span className="bc-badge bg-green-100 text-green-700">
+                <Check className="w-3 h-3 mr-1" /> Connected
+              </span>
+            ) : (
+              <span className="bc-badge bg-gray-100 text-gray-600">
+                <X className="w-3 h-3 mr-1" /> Not Connected
+              </span>
+            )}
+          </div>
+          <div className="p-4">
+            <p className="text-sm text-[#706E6B] mb-4">
+              Connect your Anthropic API key to enable the AI CoPilot. Get
+              pipeline summaries, draft emails, meeting prep, and intelligent
+              suggestions powered by Claude.
+            </p>
+
+            <div className="grid grid-cols-2 gap-3 mb-4">
+              <div className="flex items-center gap-2 text-sm">
+                <Brain className="w-4 h-4 text-[#D4A27F]" />
+                <span>Pipeline analysis</span>
+              </div>
+              <div className="flex items-center gap-2 text-sm">
+                <Mail className="w-4 h-4 text-[#D4A27F]" />
+                <span>Draft emails</span>
+              </div>
+              <div className="flex items-center gap-2 text-sm">
+                <MessageCircle className="w-4 h-4 text-[#D4A27F]" />
+                <span>AI CoPilot chat</span>
+              </div>
+              <div className="flex items-center gap-2 text-sm">
+                <Sparkles className="w-4 h-4 text-[#D4A27F]" />
+                <span>Smart suggestions</span>
+              </div>
+            </div>
+
+            {anthropicStatus?.connected ? (
+              <div className="space-y-3">
+                <div className="bg-[#F4F6F9] rounded px-3 py-2 text-sm">
+                  <span className="text-[#706E6B]">Status:</span>{" "}
+                  <span className="font-medium text-green-600">
+                    API key configured
+                  </span>
+                </div>
+                <p className="text-xs text-green-600">
+                  Claude AI is ready. Use the CoPilot button in the bottom-right
+                  corner of any page.
+                </p>
+                <div className="flex gap-2">
+                  <button
+                    onClick={handleRemoveAnthropicKey}
+                    disabled={anthropicRemoving}
+                    className="bc-btn bc-btn-destructive"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                    {anthropicRemoving ? "Removing..." : "Remove Key"}
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <div className="flex gap-2">
+                  <input
+                    type="password"
+                    value={anthropicKey}
+                    onChange={(e) => setAnthropicKey(e.target.value)}
+                    placeholder="sk-ant-..."
+                    className="bc-input flex-1 text-sm font-mono"
+                  />
+                  <button
+                    onClick={handleSaveAnthropicKey}
+                    disabled={!anthropicKey.trim() || anthropicSaving}
+                    className="bc-btn bc-btn-primary"
+                  >
+                    {anthropicSaving ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Check className="w-4 h-4" />
+                    )}
+                    {anthropicSaving ? "Saving..." : "Save"}
+                  </button>
+                </div>
+                <p className="text-xs text-[#706E6B]">
+                  Enter your Anthropic API key from{" "}
+                  <a
+                    href="https://console.anthropic.com/settings/keys"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-[#0070D2] hover:underline"
+                  >
+                    console.anthropic.com
+                  </a>
+                  . Your key is stored securely and only used for AI CoPilot
+                  requests.
+                </p>
               </div>
             )}
           </div>

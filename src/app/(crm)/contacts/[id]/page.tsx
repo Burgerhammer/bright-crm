@@ -6,6 +6,7 @@ import Link from "next/link";
 import { Save, Pencil, ArrowLeft, DollarSign } from "lucide-react";
 import { formatDate, formatCurrency } from "@/lib/utils";
 import IntegrationActions from "@/components/integrations/IntegrationActions";
+import AiActions from "@/components/AiActions";
 
 interface Account {
   id: string;
@@ -295,6 +296,16 @@ export default function ContactDetailPage() {
           phone={contact.phone || contact.mobile || undefined}
           name={`${contact.firstName} ${contact.lastName}`}
           contactId={contact.id}
+        />
+      </div>
+
+      {/* AI Actions */}
+      <div className="mb-4">
+        <AiActions
+          entityType="contact"
+          entityId={contact.id}
+          email={contact.email || undefined}
+          name={`${contact.firstName} ${contact.lastName}`}
         />
       </div>
 

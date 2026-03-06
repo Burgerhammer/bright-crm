@@ -5,6 +5,7 @@ import TopNav from "@/components/layout/TopNav";
 import Sidebar from "@/components/layout/Sidebar";
 import Dialpad from "@/components/integrations/Dialpad";
 import DialpadMiniDialer from "@/components/integrations/DialpadMiniDialer";
+import CoPilot from "@/components/CoPilot";
 
 export default function CrmShell({
   children,
@@ -75,6 +76,7 @@ export default function CrmShell({
           initialNumber={dialpadNumber}
         />
       )}
+      <CoPilot />
     </div>
   );
 }

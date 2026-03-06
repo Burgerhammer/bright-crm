@@ -12,6 +12,7 @@ import {
   DollarSign,
 } from "lucide-react";
 import { formatCurrency, formatDate } from "@/lib/utils";
+import AiActions from "@/components/AiActions";
 
 const typeOptions = ["", "Prospect", "Customer", "Partner", "Vendor", "Other"];
 
@@ -229,6 +230,15 @@ export default function AccountDetailClient({
             </button>
           )}
         </div>
+      </div>
+
+      {/* AI Actions */}
+      <div className="mb-4">
+        <AiActions
+          entityType="account"
+          entityId={account.id}
+          name={account.name}
+        />
       </div>
 
       {error && (

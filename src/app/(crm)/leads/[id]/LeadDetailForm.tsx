@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { formatDate } from "@/lib/utils";
 import IntegrationActions from "@/components/integrations/IntegrationActions";
+import AiActions from "@/components/AiActions";
 
 const STATUS_OPTIONS = ["New", "Contacted", "Qualified", "Unqualified", "Converted"];
 const SOURCE_OPTIONS = ["", "Web", "Phone", "Referral", "Partner", "Other"];
@@ -326,6 +327,16 @@ export default function LeadDetailForm({
           phone={lead.phone || undefined}
           name={`${lead.firstName} ${lead.lastName}`}
           leadId={lead.id}
+        />
+      </div>
+
+      {/* AI Actions */}
+      <div className="mb-4">
+        <AiActions
+          entityType="lead"
+          entityId={lead.id}
+          email={lead.email || undefined}
+          name={`${lead.firstName} ${lead.lastName}`}
         />
       </div>
 

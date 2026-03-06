@@ -6,6 +6,7 @@ import Link from "next/link";
 import { Save, Pencil, ArrowLeft } from "lucide-react";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import IntegrationActions from "@/components/integrations/IntegrationActions";
+import AiActions from "@/components/AiActions";
 
 interface Deal {
   id: string;
@@ -285,6 +286,15 @@ export default function DealDetailPage() {
           />
         </div>
       )}
+
+      {/* AI Actions */}
+      <div className="mb-4">
+        <AiActions
+          entityType="deal"
+          entityId={deal.id}
+          name={deal.name}
+        />
+      </div>
 
       {/* Deal Information */}
       <div className="bc-card mb-4">
