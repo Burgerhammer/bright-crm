@@ -1,43 +1,40 @@
 # Bright CRM
 
-Open-source AI-native CRM built with Next.js 15 + React 19 + TypeScript + Tailwind CSS v4 + Prisma (SQLite).
+Open-source AI-native CRM. Works fully standalone — AI features are optional (BYOK or Claude Code MCP).
 
 ## Stack
-- **Framework**: Next.js 15 (App Router) + React 19 + TypeScript (strict)
-- **Styling**: Tailwind CSS v4
-- **Database**: Prisma ORM + SQLite (`prisma/dev.db`)
-- **Auth**: NextAuth.js v5 (credentials, JWT)
-- **AI**: Anthropic SDK (BYOK) + MCP Server for Claude Code integration
-- **Icons**: Lucide React
+- Next.js 15 (App Router) + React 19 + TypeScript (strict) + Tailwind CSS v4
+- Prisma ORM + SQLite (`prisma/dev.db`, switchable to Postgres)
+- NextAuth.js v5 (credentials, JWT)
+- Anthropic SDK (BYOK) + MCP Server for Claude Code
+- Lucide React icons, Recharts
 
 ## MCP Server
 
-The `mcp-server/` directory contains an MCP server that gives Claude direct access to the CRM database. After rebuilding:
+`mcp-server/` gives Claude direct database access. Rebuild after changes:
 
 ```bash
-cd mcp-server && npm run build
+cd mcp-server && npm install && npm run build
 ```
 
-Available tools: `list_leads`, `get_lead`, `create_lead`, `update_lead`, `list_contacts`, `list_accounts`, `list_deals`, `advance_deal`, `add_note`, `log_activity`, `get_icp_profiles`, `list_sequences`, `enroll_in_sequence`, `list_pending_approvals`, `approve_action`, `reject_action`, `get_agent_configs`, `toggle_agent`, `create_task`, `get_dashboard_stats`
+20 tools: `list_leads`, `get_lead`, `create_lead`, `update_lead`, `list_contacts`, `list_accounts`, `list_deals`, `advance_deal`, `add_note`, `log_activity`, `get_icp_profiles`, `list_sequences`, `enroll_in_sequence`, `list_pending_approvals`, `approve_action`, `reject_action`, `get_agent_configs`, `toggle_agent`, `create_task`, `get_dashboard_stats`
 
-## Local Development
+## Development
 
 ```bash
-npm install
-npm run dev          # Start dev server
-npm run build        # Production build
-npm run db:push      # Push schema changes
-npm run db:seed      # Seed demo data
-npm run db:studio    # Open Prisma Studio
+npm install && npm run dev       # Start dev server
+npm run db:push                  # Push schema changes
+npm run db:seed                  # Seed demo data
+npm run db:studio                # Prisma Studio GUI
 ```
 
-## Key Directories
-- `src/app/(crm)/` — CRM pages (dashboard, leads, contacts, accounts, deals, tasks, autopilot, settings)
-- `src/app/api/` — API routes
-- `src/components/` — Shared components (CoPilot, AiActions, TagManager, BulkActionBar, etc.)
-- `src/lib/` — Utilities (prisma, auth, claude, audit, google, utils)
-- `prisma/schema.prisma` — Database schema
-- `mcp-server/` — MCP server for Claude Code integration
+## Key Paths
+- `src/app/(crm)/` — 31 CRM pages (dashboard, leads, contacts, accounts, deals, tasks, autopilot, settings)
+- `src/app/api/` — 85 API routes
+- `src/components/` — 16 components (CoPilot, AiActions, TagManager, BulkActionBar, Attachments, CustomFields, DuplicateWarning, integrations, layout)
+- `src/lib/` — 9 modules (prisma, auth, claude, audit, google, twilio, dialpad, presets, utils)
+- `prisma/schema.prisma` — 25 database models
+- `mcp-server/` — MCP server (20 tools)
 
 ## User-Invocable Skills
 
