@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
+import { logAudit, diffChanges } from "@/lib/audit";
 import { z } from "zod";
 
 const contactUpdateSchema = z.object({
@@ -88,28 +89,43 @@ export async function PUT(
 
   const data = result.data;
 
+  const updateData = {
+    firstName: data.firstName,
+    lastName: data.lastName,
+    email: data.email || null,
+    phone: data.phone || null,
+    mobile: data.mobile || null,
+    title: data.title || null,
+    department: data.department || null,
+    accountId: data.accountId || null,
+    address: data.address || null,
+    city: data.city || null,
+    state: data.state || null,
+    zip: data.zip || null,
+    country: data.country || null,
+    description: data.description || null,
+  };
+
+  const changes = diffChanges(
+    existing as unknown as Record<string, unknown>,
+    updateData as Record<string, unknown>
+  );
+
   const contact = await prisma.contact.update({
     where: { id },
-    data: {
-      firstName: data.firstName,
-      lastName: data.lastName,
-      email: data.email || null,
-      phone: data.phone || null,
-      mobile: data.mobile || null,
-      title: data.title || null,
-      department: data.department || null,
-      accountId: data.accountId || null,
-      address: data.address || null,
-      city: data.city || null,
-      state: data.state || null,
-      zip: data.zip || null,
-      country: data.country || null,
-      description: data.description || null,
-    },
+    data: updateData,
     include: {
       account: true,
       owner: true,
     },
+  });
+
+  await logAudit({
+    entityType: "Contact",
+    entityId: id,
+    action: "update",
+    changes,
+    userId: session.user.id,
   });
 
   return NextResponse.json(contact);
@@ -132,6 +148,13 @@ export async function DELETE(
   }
 
   await prisma.contact.delete({ where: { id } });
+
+  await logAudit({
+    entityType: "Contact",
+    entityId: id,
+    action: "delete",
+    userId: session.user.id,
+  });
 
   return NextResponse.json({ success: true });
 }

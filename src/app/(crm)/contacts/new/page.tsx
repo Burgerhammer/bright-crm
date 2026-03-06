@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Save, X } from "lucide-react";
+import DuplicateWarning from "@/components/DuplicateWarning";
 
 interface Account {
   id: string;
@@ -117,6 +118,14 @@ export default function NewContactPage() {
           {errors._form[0]}
         </div>
       )}
+
+      <DuplicateWarning
+        entityType="Contact"
+        firstName={form.firstName}
+        lastName={form.lastName}
+        email={form.email}
+        phone={form.phone}
+      />
 
       <form id="contact-form" onSubmit={handleSubmit}>
         {/* Contact Information */}

@@ -1,19 +1,123 @@
+"use client";
+
 import Link from "next/link";
 import { Plus, Columns3 } from "lucide-react";
-import { prisma } from "@/lib/prisma";
+import { useEffect, useState, useCallback } from "react";
 import { formatCurrency, formatDate, getInitials } from "@/lib/utils";
+import BulkActionBar from "@/components/BulkActionBar";
 
-export default async function DealsPage() {
-  const deals = await prisma.deal.findMany({
-    include: {
-      stage: true,
-      pipeline: true,
-      account: { select: { id: true, name: true } },
-      contact: { select: { id: true, firstName: true, lastName: true } },
-      owner: { select: { id: true, name: true } },
-    },
-    orderBy: { createdAt: "desc" },
-  });
+interface Stage {
+  id: string;
+  name: string;
+  color: string;
+  order: number;
+  probability: number;
+}
+
+interface Deal {
+  id: string;
+  name: string;
+  amount: number | null;
+  closeDate: string | null;
+  probability: number | null;
+  stage: Stage;
+  pipeline: { id: string; name: string };
+  account: { id: string; name: string } | null;
+  contact: { id: string; firstName: string; lastName: string } | null;
+  owner: { id: string; name: string } | null;
+  createdAt: string;
+}
+
+interface Pipeline {
+  id: string;
+  name: string;
+  stages: Stage[];
+}
+
+export default function DealsPage() {
+  const [deals, setDeals] = useState<Deal[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [stageOptions, setStageOptions] = useState<
+    { label: string; value: string }[]
+  >([]);
+
+  const fetchDeals = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await fetch("/api/deals");
+      if (res.ok) {
+        const data = await res.json();
+        setDeals(data);
+      }
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  // Fetch pipelines/stages for the update dropdown
+  useEffect(() => {
+    async function fetchStages() {
+      try {
+        const res = await fetch("/api/pipelines");
+        if (res.ok) {
+          const pipelines: Pipeline[] = await res.json();
+          const options: { label: string; value: string }[] = [];
+          for (const pipeline of pipelines) {
+            for (const stage of pipeline.stages) {
+              const label =
+                pipelines.length > 1
+                  ? `${pipeline.name} - ${stage.name}`
+                  : stage.name;
+              options.push({ label, value: stage.id });
+            }
+          }
+          setStageOptions(options);
+        }
+      } catch {
+        // Stages dropdown will just be empty
+      }
+    }
+    fetchStages();
+  }, []);
+
+  useEffect(() => {
+    fetchDeals();
+  }, [fetchDeals]);
+
+  function toggleSelect(id: string) {
+    setSelectedIds((prev) =>
+      prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]
+    );
+  }
+
+  function toggleSelectAll() {
+    if (selectedIds.length === deals.length) {
+      setSelectedIds([]);
+    } else {
+      setSelectedIds(deals.map((d) => d.id));
+    }
+  }
+
+  function handleBulkComplete() {
+    setSelectedIds([]);
+    fetchDeals();
+  }
+
+  const allSelected = deals.length > 0 && selectedIds.length === deals.length;
+  const someSelected =
+    selectedIds.length > 0 && selectedIds.length < deals.length;
+
+  const updateFields =
+    stageOptions.length > 0
+      ? [
+          {
+            key: "stageId",
+            label: "Update Stage",
+            options: stageOptions,
+          },
+        ]
+      : [];
 
   return (
     <div>
@@ -32,15 +136,33 @@ export default async function DealsPage() {
         </div>
       </div>
 
+      {/* Bulk Action Bar */}
+      <BulkActionBar
+        selectedIds={selectedIds}
+        entityType="deals"
+        onComplete={handleBulkComplete}
+        onClear={() => setSelectedIds([])}
+        updateFields={updateFields}
+      />
+
       {/* Deals Table */}
       <div className="bc-card overflow-hidden">
-        <div className="bc-section-header">
-          All Deals ({deals.length})
-        </div>
+        <div className="bc-section-header">All Deals ({deals.length})</div>
         <div className="overflow-x-auto">
           <table className="bc-table">
             <thead>
               <tr>
+                <th className="w-10">
+                  <input
+                    type="checkbox"
+                    checked={allSelected}
+                    ref={(el) => {
+                      if (el) el.indeterminate = someSelected;
+                    }}
+                    onChange={toggleSelectAll}
+                    className="rounded border-[#DDDBDA]"
+                  />
+                </th>
                 <th>Name</th>
                 <th>Account</th>
                 <th className="hidden sm:table-cell">Amount</th>
@@ -51,9 +173,21 @@ export default async function DealsPage() {
               </tr>
             </thead>
             <tbody>
-              {deals.length === 0 ? (
+              {loading ? (
                 <tr>
-                  <td colSpan={7} className="text-center py-8 text-[#706E6B]">
+                  <td
+                    colSpan={8}
+                    className="text-center py-8 text-[#706E6B]"
+                  >
+                    Loading...
+                  </td>
+                </tr>
+              ) : deals.length === 0 ? (
+                <tr>
+                  <td
+                    colSpan={8}
+                    className="text-center py-8 text-[#706E6B]"
+                  >
                     No deals found.{" "}
                     <Link
                       href="/deals/new"
@@ -65,7 +199,20 @@ export default async function DealsPage() {
                 </tr>
               ) : (
                 deals.map((deal) => (
-                  <tr key={deal.id}>
+                  <tr
+                    key={deal.id}
+                    className={
+                      selectedIds.includes(deal.id) ? "bg-[#E8F4FC]" : ""
+                    }
+                  >
+                    <td>
+                      <input
+                        type="checkbox"
+                        checked={selectedIds.includes(deal.id)}
+                        onChange={() => toggleSelect(deal.id)}
+                        className="rounded border-[#DDDBDA]"
+                      />
+                    </td>
                     <td>
                       <Link
                         href={`/deals/${deal.id}`}
@@ -87,7 +234,9 @@ export default async function DealsPage() {
                       )}
                     </td>
                     <td className="hidden sm:table-cell font-medium text-[#3E3E3C]">
-                      {deal.amount != null ? formatCurrency(deal.amount) : "--"}
+                      {deal.amount != null
+                        ? formatCurrency(deal.amount)
+                        : "--"}
                     </td>
                     <td className="hidden sm:table-cell">
                       <span
@@ -104,7 +253,9 @@ export default async function DealsPage() {
                       {deal.closeDate ? formatDate(deal.closeDate) : "--"}
                     </td>
                     <td className="text-[#3E3E3C]">
-                      {deal.probability != null ? `${deal.probability}%` : "--"}
+                      {deal.probability != null
+                        ? `${deal.probability}%`
+                        : "--"}
                     </td>
                     <td className="hidden lg:table-cell">
                       {deal.owner ? (
@@ -112,7 +263,9 @@ export default async function DealsPage() {
                           <span className="w-6 h-6 rounded-full bg-[#0070D2] text-white text-[10px] font-bold flex items-center justify-center flex-shrink-0">
                             {getInitials(deal.owner.name)}
                           </span>
-                          <span className="text-[#3E3E3C] text-xs">{deal.owner.name}</span>
+                          <span className="text-[#3E3E3C] text-xs">
+                            {deal.owner.name}
+                          </span>
                         </span>
                       ) : (
                         <span className="text-[#706E6B]">--</span>

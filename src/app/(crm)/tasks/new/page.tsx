@@ -179,7 +179,7 @@ export default function NewTaskPage() {
               <input
                 id="dueDate"
                 name="dueDate"
-                type="date"
+                type="datetime-local"
                 value={form.dueDate}
                 onChange={handleChange}
                 className="bc-input"

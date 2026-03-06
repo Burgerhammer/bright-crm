@@ -19,14 +19,18 @@ model User {
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
 
-  leads        Lead[]
-  contacts     Contact[]
-  accounts     Account[]
-  deals        Deal[]
-  activities   Activity[]
-  notes        Note[]
-  tasks        Task[]
-  integrations Integration[]
+  leads          Lead[]
+  contacts       Contact[]
+  accounts       Account[]
+  deals          Deal[]
+  activities     Activity[]
+  notes          Note[]
+  tasks          Task[]
+  integrations   Integration[]
+  emailTemplates EmailTemplate[]
+  auditLogs      AuditLog[]
+  notifications  Notification[]
+  attachments    Attachment[]
 }
 
 model Integration {
@@ -72,6 +76,7 @@ model Lead {
   activities  Activity[]
   notes       Note[]
   tasks       Task[]
+  tags        Tag[]
 }
 
 model Contact {
@@ -99,6 +104,7 @@ model Contact {
   activities  Activity[]
   notes       Note[]
   tasks       Task[]
+  tags        Tag[]
 }
 
 model Account {
@@ -125,6 +131,7 @@ model Account {
   activities    Activity[]
   notes         Note[]
   tasks         Task[]
+  tags          Tag[]
 }
 
 model Pipeline {
@@ -174,6 +181,7 @@ model Deal {
   activities  Activity[]
   notes       Note[]
   tasks       Task[]
+  tags        Tag[]
 }
 
 model Activity {
@@ -239,4 +247,88 @@ model Task {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model Tag {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  color     String   @default("#3B82F6")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  leads    Lead[]
+  contacts Contact[]
+  accounts Account[]
+  deals    Deal[]
+}
+
+model EmailTemplate {
+  id        String   @id @default(cuid())
+  name      String
+  subject   String
+  body      String
+  ownerId   String
+  owner     User     @relation(fields: [ownerId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  entityType String   // Lead, Contact, Account, Deal, Task
+  entityId   String
+  action     String   // create, update, delete
+  changes    String?  // JSON string of field changes
+  userId     String
+  user       User     @relation(fields: [userId], references: [id])
+  createdAt  DateTime @default(now())
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  message   String
+  type      String   // task_due, task_overdue, duplicate_found
+  read      Boolean  @default(false)
+  link      String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  createdAt DateTime @default(now())
+}
+
+model Attachment {
+  id         String   @id @default(cuid())
+  filename   String
+  filepath   String
+  size       Int
+  mimeType   String
+  entityType String   // Lead, Contact, Account, Deal
+  entityId   String
+  ownerId    String
+  owner      User     @relation(fields: [ownerId], references: [id])
+  createdAt  DateTime @default(now())
+}
+
+model CustomField {
+  id         String   @id @default(cuid())
+  name       String
+  fieldType  String   // text, number, date, select, boolean
+  entityType String   // Lead, Contact, Account, Deal
+  options    String?  // JSON array for select type
+  required   Boolean  @default(false)
+  order      Int      @default(0)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  values     CustomFieldValue[]
+}
+
+model CustomFieldValue {
+  id            String      @id @default(cuid())
+  value         String?
+  customFieldId String
+  customField   CustomField @relation(fields: [customFieldId], references: [id], onDelete: Cascade)
+  entityId      String
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  @@unique([customFieldId, entityId])
 }

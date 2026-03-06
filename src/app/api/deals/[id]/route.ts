@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
+import { logAudit, diffChanges } from "@/lib/audit";
 import { z } from "zod";
 
 const updateDealSchema = z.object({
@@ -109,6 +110,11 @@ export async function PUT(
     if (data.contactId !== undefined) cleanData.contactId = data.contactId || null;
     if (data.ownerId !== undefined) cleanData.ownerId = data.ownerId || null;
 
+    const changes = diffChanges(
+      existing as unknown as Record<string, unknown>,
+      cleanData
+    );
+
     const deal = await prisma.deal.update({
       where: { id },
       data: cleanData,
@@ -119,6 +125,14 @@ export async function PUT(
         contact: { select: { id: true, firstName: true, lastName: true } },
         owner: { select: { id: true, name: true, email: true } },
       },
+    });
+
+    await logAudit({
+      entityType: "Deal",
+      entityId: id,
+      action: "update",
+      changes,
+      userId: session.user.id,
     });
 
     return NextResponse.json(deal);
@@ -154,6 +168,13 @@ export async function DELETE(
     }
 
     await prisma.deal.delete({ where: { id } });
+
+    await logAudit({
+      entityType: "Deal",
+      entityId: id,
+      action: "delete",
+      userId: session.user.id,
+    });
 
     return NextResponse.json({ message: "Deal deleted" });
   } catch {

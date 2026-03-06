@@ -3,8 +3,8 @@
 import { useState, useEffect, useCallback } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
-import { Save, Trash2, ArrowLeft, CheckCircle2, RotateCcw } from "lucide-react";
-import { formatDate } from "@/lib/utils";
+import { Save, Pencil, ArrowLeft, CheckCircle2, RotateCcw } from "lucide-react";
+import { formatDate, formatDateTime } from "@/lib/utils";
 
 const STATUS_OPTIONS = ["Open", "In Progress", "Completed", "Cancelled"];
 const PRIORITY_OPTIONS = ["High", "Medium", "Low"];
@@ -71,13 +71,23 @@ function getRelatedLink(task: Task): { name: string; href: string } | null {
   return null;
 }
 
-function formatDateForInput(dateStr: string | null): string {
+function formatDateTimeForInput(dateStr: string | null): string {
   if (!dateStr) return "";
   const d = new Date(dateStr);
   const year = d.getFullYear();
   const month = String(d.getMonth() + 1).padStart(2, "0");
   const day = String(d.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
+  const hours = String(d.getHours()).padStart(2, "0");
+  const minutes = String(d.getMinutes()).padStart(2, "0");
+  return `${year}-${month}-${day}T${hours}:${minutes}`;
+}
+
+function getEntityLabel(task: Task): string {
+  if (task.lead) return `${task.lead.firstName} ${task.lead.lastName}`;
+  if (task.contact) return `${task.contact.firstName} ${task.contact.lastName}`;
+  if (task.account) return task.account.name;
+  if (task.deal) return task.deal.name;
+  return "--";
 }
 
 export default function TaskDetailPage() {
@@ -89,6 +99,7 @@ export default function TaskDetailPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [editing, setEditing] = useState(false);
   const [errors, setErrors] = useState<Record<string, string[]>>({});
 
   const [form, setForm] = useState({
@@ -104,6 +115,18 @@ export default function TaskDetailPage() {
   const [entityOptions, setEntityOptions] = useState<EntityOption[]>([]);
   const [loadingEntities, setLoadingEntities] = useState(false);
 
+  const resetForm = useCallback((data: Task) => {
+    setForm({
+      title: data.title || "",
+      description: data.description || "",
+      dueDate: formatDateTimeForInput(data.dueDate),
+      priority: data.priority || "Medium",
+      status: data.status || "Open",
+    });
+    setEntityType(getEntityType(data));
+    setEntityId(getEntityId(data));
+  }, []);
+
   const fetchTask = useCallback(async () => {
     try {
       const res = await fetch(`/api/tasks/${id}`);
@@ -116,21 +139,13 @@ export default function TaskDetailPage() {
       }
       const data: Task = await res.json();
       setTask(data);
-      setForm({
-        title: data.title || "",
-        description: data.description || "",
-        dueDate: formatDateForInput(data.dueDate),
-        priority: data.priority || "Medium",
-        status: data.status || "Open",
-      });
-      setEntityType(getEntityType(data));
-      setEntityId(getEntityId(data));
+      resetForm(data);
     } catch {
       setErrors({ _form: ["Failed to load task"] });
     } finally {
       setLoading(false);
     }
-  }, [id, router]);
+  }, [id, router, resetForm]);
 
   useEffect(() => {
     fetchTask();
@@ -222,6 +237,7 @@ export default function TaskDetailPage() {
 
       const updated = await res.json();
       setTask((prev) => (prev ? { ...prev, ...updated } : prev));
+      setEditing(false);
       setSaving(false);
     } catch {
       setErrors({ _form: ["An unexpected error occurred"] });
@@ -271,6 +287,14 @@ export default function TaskDetailPage() {
     } catch {
       // Failed to update status
     }
+  }
+
+  function handleCancel() {
+    if (task) {
+      resetForm(task);
+    }
+    setEditing(false);
+    setErrors({});
   }
 
   if (loading) {
@@ -326,23 +350,35 @@ export default function TaskDetailPage() {
               Reopen
             </button>
           )}
-          <button
-            onClick={handleDelete}
-            disabled={deleting}
-            className="bc-btn bc-btn-destructive"
-          >
-            <Trash2 className="w-4 h-4" />
-            {deleting ? "Deleting..." : "Delete"}
-          </button>
-          <button
-            type="submit"
-            form="task-form"
-            disabled={saving}
-            className="bc-btn bc-btn-primary"
-          >
-            <Save className="w-4 h-4" />
-            {saving ? "Saving..." : "Save"}
-          </button>
+          {editing ? (
+            <>
+              <button
+                type="button"
+                onClick={handleCancel}
+                className="bc-btn bc-btn-neutral"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                form="task-form"
+                disabled={saving}
+                className="bc-btn bc-btn-primary"
+              >
+                <Save className="w-4 h-4" />
+                {saving ? "Saving..." : "Save"}
+              </button>
+            </>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setEditing(true)}
+              className="bc-btn bc-btn-neutral"
+            >
+              <Pencil className="w-4 h-4" />
+              Edit
+            </button>
+          )}
         </div>
       </div>
 
@@ -396,76 +432,100 @@ export default function TaskDetailPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="md:col-span-2">
                 <label htmlFor="title" className="bc-label">
-                  Title <span className="text-red-500">*</span>
+                  Title {editing && <span className="text-red-500">*</span>}
                 </label>
-                <input
-                  id="title"
-                  name="title"
-                  type="text"
-                  value={form.title}
-                  onChange={handleChange}
-                  className="bc-input"
-                  required
-                />
-                {errors.title && (
-                  <p className="text-xs text-red-600 mt-1">{errors.title[0]}</p>
+                {editing ? (
+                  <>
+                    <input
+                      id="title"
+                      name="title"
+                      type="text"
+                      value={form.title}
+                      onChange={handleChange}
+                      className="bc-input"
+                      required
+                    />
+                    {errors.title && (
+                      <p className="text-xs text-red-600 mt-1">{errors.title[0]}</p>
+                    )}
+                  </>
+                ) : (
+                  <p className="text-sm text-[#3E3E3C] py-1">{task.title || "--"}</p>
                 )}
               </div>
               <div className="md:col-span-2">
                 <label htmlFor="description" className="bc-label">
                   Description
                 </label>
-                <textarea
-                  id="description"
-                  name="description"
-                  rows={3}
-                  value={form.description}
-                  onChange={handleChange}
-                  className="bc-input"
-                />
+                {editing ? (
+                  <textarea
+                    id="description"
+                    name="description"
+                    rows={3}
+                    value={form.description}
+                    onChange={handleChange}
+                    className="bc-input"
+                  />
+                ) : (
+                  <p className="text-sm text-[#3E3E3C] py-1 whitespace-pre-wrap">{task.description || "--"}</p>
+                )}
               </div>
               <div>
                 <label htmlFor="dueDate" className="bc-label">Due Date</label>
-                <input
-                  id="dueDate"
-                  name="dueDate"
-                  type="date"
-                  value={form.dueDate}
-                  onChange={handleChange}
-                  className="bc-input"
-                />
+                {editing ? (
+                  <input
+                    id="dueDate"
+                    name="dueDate"
+                    type="datetime-local"
+                    value={form.dueDate}
+                    onChange={handleChange}
+                    className="bc-input"
+                  />
+                ) : (
+                  <p className="text-sm text-[#3E3E3C] py-1">
+                    {task.dueDate ? formatDateTime(task.dueDate) : "--"}
+                  </p>
+                )}
               </div>
               <div>
                 <label htmlFor="priority" className="bc-label">Priority</label>
-                <select
-                  id="priority"
-                  name="priority"
-                  value={form.priority}
-                  onChange={handleChange}
-                  className="bc-input"
-                >
-                  {PRIORITY_OPTIONS.map((opt) => (
-                    <option key={opt} value={opt}>
-                      {opt}
-                    </option>
-                  ))}
-                </select>
+                {editing ? (
+                  <select
+                    id="priority"
+                    name="priority"
+                    value={form.priority}
+                    onChange={handleChange}
+                    className="bc-input"
+                  >
+                    {PRIORITY_OPTIONS.map((opt) => (
+                      <option key={opt} value={opt}>
+                        {opt}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <p className="text-sm text-[#3E3E3C] py-1">{task.priority || "--"}</p>
+                )}
               </div>
               <div>
                 <label htmlFor="status" className="bc-label">Status</label>
-                <select
-                  id="status"
-                  name="status"
-                  value={form.status}
-                  onChange={handleChange}
-                  className="bc-input"
-                >
-                  {STATUS_OPTIONS.map((opt) => (
-                    <option key={opt} value={opt}>
-                      {opt}
-                    </option>
-                  ))}
-                </select>
+                {editing ? (
+                  <select
+                    id="status"
+                    name="status"
+                    value={form.status}
+                    onChange={handleChange}
+                    className="bc-input"
+                  >
+                    {STATUS_OPTIONS.map((opt) => (
+                      <option key={opt} value={opt}>
+                        {opt}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <p className="text-sm text-[#3E3E3C] py-1">{task.status || "--"}</p>
+                )}
               </div>
             </div>
           </div>
@@ -478,47 +538,78 @@ export default function TaskDetailPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label htmlFor="entityType" className="bc-label">Entity Type</label>
-                <select
-                  id="entityType"
-                  value={entityType}
-                  onChange={(e) => {
-                    setEntityType(e.target.value);
-                    setEntityId("");
-                  }}
-                  className="bc-input"
-                >
-                  {ENTITY_TYPES.map((opt) => (
-                    <option key={opt} value={opt}>
-                      {opt || "-- None --"}
-                    </option>
-                  ))}
-                </select>
+                {editing ? (
+                  <select
+                    id="entityType"
+                    value={entityType}
+                    onChange={(e) => {
+                      setEntityType(e.target.value);
+                      setEntityId("");
+                    }}
+                    className="bc-input"
+                  >
+                    {ENTITY_TYPES.map((opt) => (
+                      <option key={opt} value={opt}>
+                        {opt || "-- None --"}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <p className="text-sm text-[#3E3E3C] py-1">{getEntityType(task) || "--"}</p>
+                )}
               </div>
               <div>
                 <label htmlFor="entityId" className="bc-label">
                   {entityType || "Entity"}
                 </label>
-                <select
-                  id="entityId"
-                  value={entityId}
-                  onChange={(e) => setEntityId(e.target.value)}
-                  className="bc-input"
-                  disabled={!entityType || loadingEntities}
-                >
-                  <option value="">
-                    {loadingEntities ? "Loading..." : "-- Select --"}
-                  </option>
-                  {entityOptions.map((opt) => (
-                    <option key={opt.id} value={opt.id}>
-                      {opt.label}
+                {editing ? (
+                  <select
+                    id="entityId"
+                    value={entityId}
+                    onChange={(e) => setEntityId(e.target.value)}
+                    className="bc-input"
+                    disabled={!entityType || loadingEntities}
+                  >
+                    <option value="">
+                      {loadingEntities ? "Loading..." : "-- Select --"}
                     </option>
-                  ))}
-                </select>
+                    {entityOptions.map((opt) => (
+                      <option key={opt.id} value={opt.id}>
+                        {opt.label}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <p className="text-sm text-[#3E3E3C] py-1">
+                    {related ? (
+                      <Link
+                        href={related.href}
+                        className="text-[#0070D2] hover:text-[#005FB2]"
+                      >
+                        {getEntityLabel(task)}
+                      </Link>
+                    ) : (
+                      "--"
+                    )}
+                  </p>
+                )}
               </div>
             </div>
           </div>
         </div>
       </form>
+
+      {/* Danger Zone */}
+      <div className="mt-8 pt-4 border-t border-[#DDDBDA]">
+        <button
+          type="button"
+          onClick={handleDelete}
+          disabled={deleting}
+          className="text-sm text-red-500 hover:text-red-700 transition-colors"
+        >
+          {deleting ? "Deleting..." : "Delete this task"}
+        </button>
+      </div>
     </div>
   );
 }

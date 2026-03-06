@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
+import { logAudit } from "@/lib/audit";
 import { z } from "zod";
 
 const createDealSchema = z.object({
@@ -97,6 +98,13 @@ export async function POST(request: NextRequest) {
         contact: { select: { id: true, firstName: true, lastName: true } },
         owner: { select: { id: true, name: true, email: true } },
       },
+    });
+
+    await logAudit({
+      entityType: "Deal",
+      entityId: deal.id,
+      action: "create",
+      userId: session.user.id,
     });
 
     return NextResponse.json(deal, { status: 201 });

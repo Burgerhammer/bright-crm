@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Save, X } from "lucide-react";
+import DuplicateWarning from "@/components/DuplicateWarning";
 
 const STATUS_OPTIONS = ["New", "Contacted", "Qualified", "Unqualified", "Converted"];
 const SOURCE_OPTIONS = ["", "Web", "Phone", "Referral", "Partner", "Other"];
@@ -93,6 +94,15 @@ export default function NewLeadPage() {
           {error}
         </div>
       )}
+
+      <DuplicateWarning
+        entityType="Lead"
+        firstName={form.firstName}
+        lastName={form.lastName}
+        email={form.email}
+        phone={form.phone}
+        company={form.company}
+      />
 
       <form id="lead-form" onSubmit={handleSubmit}>
         {/* Lead Information */}

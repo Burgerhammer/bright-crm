@@ -1,7 +1,11 @@
+"use client";
+
 import Link from "next/link";
 import { Plus } from "lucide-react";
-import { prisma } from "@/lib/prisma";
+import { useEffect, useState, useCallback } from "react";
+import { useSearchParams } from "next/navigation";
 import { formatDate } from "@/lib/utils";
+import BulkActionBar from "@/components/BulkActionBar";
 
 const statusColors: Record<string, string> = {
   New: "bg-blue-100 text-blue-800",
@@ -19,21 +23,87 @@ const ratingColors: Record<string, string> = {
 
 const STATUSES = ["All", "New", "Contacted", "Qualified", "Unqualified", "Converted"];
 
-export default async function LeadsPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ status?: string }>;
-}) {
-  const { status } = await searchParams;
+interface Lead {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email: string | null;
+  company: string | null;
+  status: string;
+  rating: string | null;
+  owner: { id: string; name: string } | null;
+  createdAt: string;
+}
+
+const UPDATE_FIELDS = [
+  {
+    key: "status",
+    label: "Update Status",
+    options: [
+      { label: "New", value: "New" },
+      { label: "Contacted", value: "Contacted" },
+      { label: "Qualified", value: "Qualified" },
+      { label: "Unqualified", value: "Unqualified" },
+      { label: "Converted", value: "Converted" },
+    ],
+  },
+];
+
+export default function LeadsPage() {
+  const searchParams = useSearchParams();
+  const status = searchParams.get("status");
   const activeStatus = status && status !== "All" ? status : undefined;
 
-  const leads = await prisma.lead.findMany({
-    where: activeStatus ? { status: activeStatus } : {},
-    include: {
-      owner: { select: { id: true, name: true } },
-    },
-    orderBy: { createdAt: "desc" },
-  });
+  const [leads, setLeads] = useState<Lead[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+
+  const fetchLeads = useCallback(async () => {
+    setLoading(true);
+    try {
+      const url = activeStatus
+        ? `/api/leads?status=${activeStatus}`
+        : "/api/leads";
+      const res = await fetch(url);
+      if (res.ok) {
+        const data = await res.json();
+        setLeads(data);
+      }
+    } finally {
+      setLoading(false);
+    }
+  }, [activeStatus]);
+
+  useEffect(() => {
+    fetchLeads();
+  }, [fetchLeads]);
+
+  // Clear selection when filter changes
+  useEffect(() => {
+    setSelectedIds([]);
+  }, [activeStatus]);
+
+  function toggleSelect(id: string) {
+    setSelectedIds((prev) =>
+      prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]
+    );
+  }
+
+  function toggleSelectAll() {
+    if (selectedIds.length === leads.length) {
+      setSelectedIds([]);
+    } else {
+      setSelectedIds(leads.map((l) => l.id));
+    }
+  }
+
+  function handleBulkComplete() {
+    setSelectedIds([]);
+    fetchLeads();
+  }
+
+  const allSelected = leads.length > 0 && selectedIds.length === leads.length;
+  const someSelected = selectedIds.length > 0 && selectedIds.length < leads.length;
 
   return (
     <div>
@@ -77,11 +147,31 @@ export default async function LeadsPage({
         </div>
       </div>
 
+      {/* Bulk Action Bar */}
+      <BulkActionBar
+        selectedIds={selectedIds}
+        entityType="leads"
+        onComplete={handleBulkComplete}
+        onClear={() => setSelectedIds([])}
+        updateFields={UPDATE_FIELDS}
+      />
+
       {/* Leads Table */}
       <div className="bc-card overflow-hidden overflow-x-auto">
         <table className="bc-table">
           <thead>
             <tr>
+              <th className="w-10">
+                <input
+                  type="checkbox"
+                  checked={allSelected}
+                  ref={(el) => {
+                    if (el) el.indeterminate = someSelected;
+                  }}
+                  onChange={toggleSelectAll}
+                  className="rounded border-[#DDDBDA]"
+                />
+              </th>
               <th>Name</th>
               <th>Company</th>
               <th className="hidden sm:table-cell">Email</th>
@@ -92,9 +182,15 @@ export default async function LeadsPage({
             </tr>
           </thead>
           <tbody>
-            {leads.length === 0 ? (
+            {loading ? (
               <tr>
-                <td colSpan={7} className="text-center py-8 text-[#706E6B]">
+                <td colSpan={8} className="text-center py-8 text-[#706E6B]">
+                  Loading...
+                </td>
+              </tr>
+            ) : leads.length === 0 ? (
+              <tr>
+                <td colSpan={8} className="text-center py-8 text-[#706E6B]">
                   No leads found.{" "}
                   <Link
                     href="/leads/new"
@@ -106,7 +202,20 @@ export default async function LeadsPage({
               </tr>
             ) : (
               leads.map((lead) => (
-                <tr key={lead.id}>
+                <tr
+                  key={lead.id}
+                  className={
+                    selectedIds.includes(lead.id) ? "bg-[#E8F4FC]" : ""
+                  }
+                >
+                  <td>
+                    <input
+                      type="checkbox"
+                      checked={selectedIds.includes(lead.id)}
+                      onChange={() => toggleSelect(lead.id)}
+                      className="rounded border-[#DDDBDA]"
+                    />
+                  </td>
                   <td>
                     <Link
                       href={`/leads/${lead.id}`}
@@ -116,7 +225,9 @@ export default async function LeadsPage({
                     </Link>
                   </td>
                   <td className="text-[#3E3E3C]">{lead.company || "--"}</td>
-                  <td className="hidden sm:table-cell text-[#3E3E3C]">{lead.email || "--"}</td>
+                  <td className="hidden sm:table-cell text-[#3E3E3C]">
+                    {lead.email || "--"}
+                  </td>
                   <td>
                     <span
                       className={`bc-badge ${statusColors[lead.status] || "bg-gray-100 text-gray-600"}`}

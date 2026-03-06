@@ -3,7 +3,7 @@
 import { useSession } from "next-auth/react";
 import { useState } from "react";
 import Link from "next/link";
-import { Settings, GitBranch, User, Save, Plug } from "lucide-react";
+import { Settings, GitBranch, User, Save, Plug, Mail, Tag, Copy, Layers, FileText } from "lucide-react";
 
 export default function SettingsPage() {
   const { data: session, update } = useSession();
@@ -128,6 +128,104 @@ export default function SettingsPage() {
               className="bc-btn bc-btn-neutral"
             >
               Manage Integrations
+            </Link>
+          </div>
+        </div>
+
+        {/* Tags */}
+        <div className="bc-card">
+          <div className="bc-section-header flex items-center gap-2">
+            <Tag className="w-4 h-4" />
+            Tags
+          </div>
+          <div className="p-4">
+            <p className="text-sm text-[#706E6B] mb-4">
+              Create and manage tags to organize your leads, contacts, accounts,
+              and deals. Apply color-coded labels for quick visual identification.
+            </p>
+            <Link href="/settings/tags" className="bc-btn bc-btn-neutral">
+              Manage Tags
+            </Link>
+          </div>
+        </div>
+
+        {/* Email Templates */}
+        <div className="bc-card">
+          <div className="bc-section-header flex items-center gap-2">
+            <Mail className="w-4 h-4" />
+            Email Templates
+          </div>
+          <div className="p-4">
+            <p className="text-sm text-[#706E6B] mb-4">
+              Create reusable email templates with variable placeholders to
+              speed up your outreach and ensure consistent messaging.
+            </p>
+            <Link
+              href="/settings/email-templates"
+              className="bc-btn bc-btn-neutral"
+            >
+              Manage Templates
+            </Link>
+          </div>
+        </div>
+
+        {/* Custom Fields */}
+        <div className="bc-card">
+          <div className="bc-section-header flex items-center gap-2">
+            <Layers className="w-4 h-4" />
+            Custom Fields
+          </div>
+          <div className="p-4">
+            <p className="text-sm text-[#706E6B] mb-4">
+              Define custom fields to track additional data on leads, contacts,
+              accounts, and deals. Supports text, number, date, dropdown, and
+              boolean field types.
+            </p>
+            <Link
+              href="/settings/custom-fields"
+              className="bc-btn bc-btn-neutral"
+            >
+              Manage Custom Fields
+            </Link>
+          </div>
+        </div>
+
+        {/* Duplicate Detection */}
+        <div className="bc-card">
+          <div className="bc-section-header flex items-center gap-2">
+            <Copy className="w-4 h-4" />
+            Duplicate Detection
+          </div>
+          <div className="p-4">
+            <p className="text-sm text-[#706E6B] mb-4">
+              Scan your leads and contacts for potential duplicate records.
+              Find and review matches by email, phone, or name.
+            </p>
+            <Link
+              href="/settings/duplicates"
+              className="bc-btn bc-btn-neutral"
+            >
+              View Duplicates
+            </Link>
+          </div>
+        </div>
+
+        {/* Audit Log */}
+        <div className="bc-card">
+          <div className="bc-section-header flex items-center gap-2">
+            <FileText className="w-4 h-4" />
+            Audit Log
+          </div>
+          <div className="p-4">
+            <p className="text-sm text-[#706E6B] mb-4">
+              View a detailed history of all changes made to leads, contacts,
+              accounts, deals, and tasks. Track who changed what and when.
+            </p>
+            <Link
+              href="/settings/audit-log"
+              className="bc-btn bc-btn-neutral"
+            >
+              View Audit Log
             </Link>
           </div>
         </div>

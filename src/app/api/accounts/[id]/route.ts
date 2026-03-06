@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
+import { logAudit, diffChanges } from "@/lib/audit";
 import { z } from "zod";
 
 const updateAccountSchema = z.object({
@@ -119,6 +120,11 @@ export async function PUT(
     if (data.ownerId !== undefined)
       cleanData.ownerId = data.ownerId || null;
 
+    const changes = diffChanges(
+      existing as unknown as Record<string, unknown>,
+      cleanData
+    );
+
     const account = await prisma.account.update({
       where: { id },
       data: cleanData,
@@ -147,6 +153,14 @@ export async function PUT(
           orderBy: { createdAt: "desc" },
         },
       },
+    });
+
+    await logAudit({
+      entityType: "Account",
+      entityId: id,
+      action: "update",
+      changes,
+      userId: session.user.id,
     });
 
     return NextResponse.json(account);
@@ -182,6 +196,13 @@ export async function DELETE(
     }
 
     await prisma.account.delete({ where: { id } });
+
+    await logAudit({
+      entityType: "Account",
+      entityId: id,
+      action: "delete",
+      userId: session.user.id,
+    });
 
     return NextResponse.json({ message: "Account deleted" });
   } catch {

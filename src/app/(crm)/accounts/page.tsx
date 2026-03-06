@@ -1,9 +1,11 @@
+"use client";
+
 import Link from "next/link";
 import { Plus, Building2 } from "lucide-react";
-import { prisma } from "@/lib/prisma";
-import { auth } from "@/lib/auth";
-import { redirect } from "next/navigation";
+import { useEffect, useState, useCallback } from "react";
+import { useSearchParams } from "next/navigation";
 import { formatCurrency } from "@/lib/utils";
+import BulkActionBar from "@/components/BulkActionBar";
 
 const typeBadgeColors: Record<string, string> = {
   Prospect: "bg-blue-100 text-blue-800",
@@ -15,25 +17,81 @@ const typeBadgeColors: Record<string, string> = {
 
 const typeOptions = ["Prospect", "Customer", "Partner", "Vendor", "Other"];
 
-export default async function AccountsPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ type?: string }>;
-}) {
-  const session = await auth();
-  if (!session?.user) redirect("/login");
+interface Account {
+  id: string;
+  name: string;
+  industry: string | null;
+  type: string | null;
+  phone: string | null;
+  city: string | null;
+  state: string | null;
+  annualRevenue: number | null;
+  employees: number | null;
+  owner: { id: string; name: string; email: string } | null;
+}
 
-  const { type } = await searchParams;
+const UPDATE_FIELDS = [
+  {
+    key: "type",
+    label: "Update Type",
+    options: typeOptions.map((t) => ({ label: t, value: t })),
+  },
+];
 
-  const where = type ? { type } : {};
+export default function AccountsPage() {
+  const searchParams = useSearchParams();
+  const type = searchParams.get("type");
 
-  const accounts = await prisma.account.findMany({
-    where,
-    include: {
-      owner: { select: { id: true, name: true, email: true } },
-    },
-    orderBy: { name: "asc" },
-  });
+  const [accounts, setAccounts] = useState<Account[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+
+  const fetchAccounts = useCallback(async () => {
+    setLoading(true);
+    try {
+      const url = type ? `/api/accounts?type=${type}` : "/api/accounts";
+      const res = await fetch(url);
+      if (res.ok) {
+        const data = await res.json();
+        setAccounts(data);
+      }
+    } finally {
+      setLoading(false);
+    }
+  }, [type]);
+
+  useEffect(() => {
+    fetchAccounts();
+  }, [fetchAccounts]);
+
+  // Clear selection when filter changes
+  useEffect(() => {
+    setSelectedIds([]);
+  }, [type]);
+
+  function toggleSelect(id: string) {
+    setSelectedIds((prev) =>
+      prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]
+    );
+  }
+
+  function toggleSelectAll() {
+    if (selectedIds.length === accounts.length) {
+      setSelectedIds([]);
+    } else {
+      setSelectedIds(accounts.map((a) => a.id));
+    }
+  }
+
+  function handleBulkComplete() {
+    setSelectedIds([]);
+    fetchAccounts();
+  }
+
+  const allSelected =
+    accounts.length > 0 && selectedIds.length === accounts.length;
+  const someSelected =
+    selectedIds.length > 0 && selectedIds.length < accounts.length;
 
   return (
     <div>
@@ -82,12 +140,32 @@ export default async function AccountsPage({
         </div>
       </div>
 
+      {/* Bulk Action Bar */}
+      <BulkActionBar
+        selectedIds={selectedIds}
+        entityType="accounts"
+        onComplete={handleBulkComplete}
+        onClear={() => setSelectedIds([])}
+        updateFields={UPDATE_FIELDS}
+      />
+
       {/* Table */}
       <div className="bc-card overflow-hidden">
         <div className="overflow-x-auto">
           <table className="bc-table">
             <thead>
               <tr>
+                <th className="w-10">
+                  <input
+                    type="checkbox"
+                    checked={allSelected}
+                    ref={(el) => {
+                      if (el) el.indeterminate = someSelected;
+                    }}
+                    onChange={toggleSelectAll}
+                    className="rounded border-[#DDDBDA]"
+                  />
+                </th>
                 <th>Name</th>
                 <th className="hidden sm:table-cell">Industry</th>
                 <th className="hidden md:table-cell">Type</th>
@@ -99,10 +177,19 @@ export default async function AccountsPage({
               </tr>
             </thead>
             <tbody>
-              {accounts.length === 0 ? (
+              {loading ? (
                 <tr>
                   <td
-                    colSpan={8}
+                    colSpan={9}
+                    className="text-center py-8 text-[#706E6B] text-sm"
+                  >
+                    Loading...
+                  </td>
+                </tr>
+              ) : accounts.length === 0 ? (
+                <tr>
+                  <td
+                    colSpan={9}
                     className="text-center py-8 text-[#706E6B] text-sm"
                   >
                     No accounts found.{" "}
@@ -116,7 +203,20 @@ export default async function AccountsPage({
                 </tr>
               ) : (
                 accounts.map((account) => (
-                  <tr key={account.id}>
+                  <tr
+                    key={account.id}
+                    className={
+                      selectedIds.includes(account.id) ? "bg-[#E8F4FC]" : ""
+                    }
+                  >
+                    <td>
+                      <input
+                        type="checkbox"
+                        checked={selectedIds.includes(account.id)}
+                        onChange={() => toggleSelect(account.id)}
+                        className="rounded border-[#DDDBDA]"
+                      />
+                    </td>
                     <td>
                       <Link
                         href={`/accounts/${account.id}`}

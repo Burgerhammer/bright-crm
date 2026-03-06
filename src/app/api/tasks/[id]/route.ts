@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
+import { logAudit, diffChanges } from "@/lib/audit";
 import { z } from "zod";
 
 const updateTaskSchema = z.object({
@@ -99,10 +100,23 @@ export async function PUT(
       cleanData.completedAt = null;
     }
 
+    const changes = diffChanges(
+      existing as unknown as Record<string, unknown>,
+      cleanData
+    );
+
     const task = await prisma.task.update({
       where: { id },
       data: cleanData,
       include: taskInclude,
+    });
+
+    await logAudit({
+      entityType: "Task",
+      entityId: id,
+      action: "update",
+      changes,
+      userId: session.user.id,
     });
 
     return NextResponse.json(task);
@@ -138,6 +152,13 @@ export async function DELETE(
     }
 
     await prisma.task.delete({ where: { id } });
+
+    await logAudit({
+      entityType: "Task",
+      entityId: id,
+      action: "delete",
+      userId: session.user.id,
+    });
 
     return new NextResponse(null, { status: 204 });
   } catch {
