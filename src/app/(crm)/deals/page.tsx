@@ -20,7 +20,7 @@ export default async function DealsPage() {
       {/* Page Header */}
       <div className="flex items-center justify-between mb-4">
         <h1 className="text-xl font-bold text-[#3E3E3C]">Deals</h1>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-col sm:flex-row gap-2">
           <Link href="/deals/pipeline" className="bc-btn bc-btn-neutral">
             <Columns3 className="w-4 h-4" />
             Pipeline View
@@ -43,11 +43,11 @@ export default async function DealsPage() {
               <tr>
                 <th>Name</th>
                 <th>Account</th>
-                <th>Amount</th>
-                <th>Stage</th>
-                <th>Close Date</th>
+                <th className="hidden sm:table-cell">Amount</th>
+                <th className="hidden sm:table-cell">Stage</th>
+                <th className="hidden lg:table-cell">Close Date</th>
                 <th>Probability</th>
-                <th>Owner</th>
+                <th className="hidden lg:table-cell">Owner</th>
               </tr>
             </thead>
             <tbody>
@@ -86,10 +86,10 @@ export default async function DealsPage() {
                         <span className="text-[#706E6B]">--</span>
                       )}
                     </td>
-                    <td className="font-medium text-[#3E3E3C]">
+                    <td className="hidden sm:table-cell font-medium text-[#3E3E3C]">
                       {deal.amount != null ? formatCurrency(deal.amount) : "--"}
                     </td>
-                    <td>
+                    <td className="hidden sm:table-cell">
                       <span
                         className="bc-badge"
                         style={{
@@ -100,13 +100,13 @@ export default async function DealsPage() {
                         {deal.stage.name}
                       </span>
                     </td>
-                    <td className="text-[#706E6B] text-xs">
+                    <td className="hidden lg:table-cell text-[#706E6B] text-xs">
                       {deal.closeDate ? formatDate(deal.closeDate) : "--"}
                     </td>
                     <td className="text-[#3E3E3C]">
                       {deal.probability != null ? `${deal.probability}%` : "--"}
                     </td>
-                    <td>
+                    <td className="hidden lg:table-cell">
                       {deal.owner ? (
                         <span className="inline-flex items-center gap-1.5">
                           <span className="w-6 h-6 rounded-full bg-[#0070D2] text-white text-[10px] font-bold flex items-center justify-center flex-shrink-0">

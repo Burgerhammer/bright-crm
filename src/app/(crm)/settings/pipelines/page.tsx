@@ -126,7 +126,7 @@ export default function PipelineSettingsPage() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-6">
         <div className="flex items-center gap-3">
           <Link
             href="/settings"
@@ -217,7 +217,7 @@ export default function PipelineSettingsPage() {
             </div>
           </div>
 
-          <div className="p-2">
+          <div className="p-2 overflow-x-auto">
             <table className="bc-table">
               <thead>
                 <tr>

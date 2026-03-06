@@ -13,6 +13,7 @@ export default function CrmShell({
   children: React.ReactNode;
   userName: string;
 }) {
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [dialpadOpen, setDialpadOpen] = useState(false);
   const [dialpadNumber, setDialpadNumber] = useState("");
   const [dialpadStatus, setDialpadStatus] = useState<{
@@ -51,10 +52,14 @@ export default function CrmShell({
 
   return (
     <div className="min-h-screen bg-[#F4F6F9]">
-      <TopNav userName={userName} onOpenDialpad={() => openDialpad()} />
+      <TopNav
+        userName={userName}
+        onOpenDialpad={() => openDialpad()}
+        onToggleSidebar={() => setSidebarOpen((prev) => !prev)}
+      />
       <div className="flex">
-        <Sidebar />
-        <main className="flex-1 p-6">{children}</main>
+        <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+        <main className="flex-1 p-3 sm:p-6">{children}</main>
       </div>
       {useDialpadMiniDialer ? (
         <DialpadMiniDialer

@@ -190,7 +190,7 @@ export default function LeadDetailForm({
   return (
     <div>
       {/* Page Header */}
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
         <div className="flex items-center gap-3">
           <Link
             href="/leads"
@@ -214,7 +214,7 @@ export default function LeadDetailForm({
             </div>
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           {editing ? (
             <>
               <button
@@ -277,7 +277,7 @@ export default function LeadDetailForm({
       {/* Lead Information */}
       <div className="bc-card mb-4">
         <div className="bc-section-header">Lead Information</div>
-        <div className="p-4 grid grid-cols-2 gap-x-6 gap-y-4">
+        <div className="p-4 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
           <div>
             <label htmlFor="firstName" className="bc-label">
               First Name <span className="text-red-500">*</span>
@@ -430,7 +430,7 @@ export default function LeadDetailForm({
       {/* Lead Details */}
       <div className="bc-card mb-4">
         <div className="bc-section-header">Lead Details</div>
-        <div className="p-4 grid grid-cols-2 gap-x-6 gap-y-4">
+        <div className="p-4 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
           <div>
             <label htmlFor="status" className="bc-label">
               Status
@@ -513,8 +513,8 @@ export default function LeadDetailForm({
       {/* Address */}
       <div className="bc-card mb-4">
         <div className="bc-section-header">Address</div>
-        <div className="p-4 grid grid-cols-2 gap-x-6 gap-y-4">
-          <div className="col-span-2">
+        <div className="p-4 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
+          <div className="sm:col-span-2">
             <label htmlFor="address" className="bc-label">
               Street Address
             </label>
@@ -636,7 +636,7 @@ export default function LeadDetailForm({
       {/* System Information */}
       <div className="bc-card mb-4">
         <div className="bc-section-header">System Information</div>
-        <div className="p-4 grid grid-cols-2 gap-x-6 gap-y-4">
+        <div className="p-4 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
           <div>
             <span className="bc-label">Created</span>
             <p className="text-sm text-[#3E3E3C] py-1">
@@ -663,6 +663,7 @@ export default function LeadDetailForm({
             No activities yet.
           </div>
         ) : (
+          <div className="overflow-x-auto">
           <table className="bc-table">
             <thead>
               <tr>
@@ -705,6 +706,7 @@ export default function LeadDetailForm({
               ))}
             </tbody>
           </table>
+          </div>
         )}
       </div>
 

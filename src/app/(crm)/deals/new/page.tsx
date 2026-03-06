@@ -203,7 +203,7 @@ export default function NewDealPage() {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label htmlFor="type" className="bc-label">Type</label>
                   <select
@@ -232,7 +232,7 @@ export default function NewDealPage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div>
                   <label htmlFor="amount" className="bc-label">Amount ($)</label>
                   <input

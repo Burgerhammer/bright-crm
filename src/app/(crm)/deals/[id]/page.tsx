@@ -145,8 +145,8 @@ export default function DealDetailPage() {
   return (
     <div>
       {/* Header */}
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-3">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
+        <div className="flex items-center gap-3 flex-wrap">
           <Link href="/deals" className="text-[#706E6B] hover:text-[#3E3E3C]">
             <ArrowLeft className="w-5 h-5" />
           </Link>
@@ -157,7 +157,7 @@ export default function DealDetailPage() {
             </span>
           )}
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
           <button
             onClick={handleDelete}
             className="bc-btn bc-btn-destructive"
@@ -177,8 +177,8 @@ export default function DealDetailPage() {
       </div>
 
       {/* Stage Path */}
-      <div className="bc-card mb-6 p-4">
-        <div className="flex items-center gap-1">
+      <div className="bc-card mb-6 p-4 overflow-x-auto">
+        <div className="flex items-center gap-1 min-w-0">
           {stages.map((stage, i) => {
             const isCurrent = stage.id === form.stageId;
             const currentIdx = stages.findIndex((s) => s.id === form.stageId);
@@ -232,7 +232,7 @@ export default function DealDetailPage() {
       {/* Deal Information */}
       <div className="bc-card mb-4">
         <div className="bc-section-header">Deal Information</div>
-        <div className="p-4 grid grid-cols-2 gap-4">
+        <div className="p-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label className="bc-label">Deal Name</label>
             <input
@@ -304,7 +304,7 @@ export default function DealDetailPage() {
       {/* Relationships */}
       <div className="bc-card mb-4">
         <div className="bc-section-header">Relationships</div>
-        <div className="p-4 grid grid-cols-2 gap-4">
+        <div className="p-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label className="bc-label">Account</label>
             <select
@@ -408,7 +408,7 @@ export default function DealDetailPage() {
       {/* Details */}
       <div className="bc-card">
         <div className="bc-section-header">Details</div>
-        <div className="p-4 grid grid-cols-2 gap-4 text-sm">
+        <div className="p-4 grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
           <div>
             <span className="text-[#706E6B]">Created:</span>{" "}
             {formatDate(deal.createdAt)}

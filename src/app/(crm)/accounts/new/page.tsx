@@ -81,7 +81,7 @@ export default function NewAccountPage() {
   return (
     <div>
       {/* Page Header */}
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
         <div className="flex items-center gap-2">
           <Link
             href="/accounts"

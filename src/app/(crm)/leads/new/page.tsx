@@ -98,7 +98,7 @@ export default function NewLeadPage() {
         {/* Lead Information */}
         <div className="bc-card mb-4">
           <div className="bc-section-header">Lead Information</div>
-          <div className="p-4 grid grid-cols-2 gap-x-6 gap-y-4">
+          <div className="p-4 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
             <div>
               <label htmlFor="firstName" className="bc-label">
                 First Name <span className="text-red-500">*</span>
@@ -185,7 +185,7 @@ export default function NewLeadPage() {
         {/* Lead Details */}
         <div className="bc-card mb-4">
           <div className="bc-section-header">Lead Details</div>
-          <div className="p-4 grid grid-cols-2 gap-x-6 gap-y-4">
+          <div className="p-4 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
             <div>
               <label htmlFor="status" className="bc-label">
                 Status
@@ -246,8 +246,8 @@ export default function NewLeadPage() {
         {/* Address */}
         <div className="bc-card mb-4">
           <div className="bc-section-header">Address</div>
-          <div className="p-4 grid grid-cols-2 gap-x-6 gap-y-4">
-            <div className="col-span-2">
+          <div className="p-4 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
+            <div className="sm:col-span-2">
               <label htmlFor="address" className="bc-label">
                 Street Address
               </label>

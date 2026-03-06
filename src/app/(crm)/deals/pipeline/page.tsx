@@ -68,7 +68,7 @@ export default async function PipelinePage() {
             <div
               key={stage.id}
               className={`flex-shrink-0 ${
-                isClosedStage ? "w-48" : "w-72"
+                isClosedStage ? "w-40 sm:w-48" : "w-60 sm:w-72"
               } flex flex-col`}
             >
               {/* Column Header */}

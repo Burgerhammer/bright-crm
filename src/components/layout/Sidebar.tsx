@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Plus, Clock, Users, Building2, DollarSign, UserCircle } from "lucide-react";
+import { Plus, Clock, Users, Building2, DollarSign, UserCircle, X } from "lucide-react";
 
 interface RecentItem {
   id: string;
@@ -30,8 +30,16 @@ const typeHrefs = {
   deal: "/deals",
 };
 
-export default function Sidebar({ recentItems = [] }: { recentItems?: RecentItem[] }) {
-  return (
+export default function Sidebar({
+  recentItems = [],
+  open = false,
+  onClose,
+}: {
+  recentItems?: RecentItem[];
+  open?: boolean;
+  onClose?: () => void;
+}) {
+  const sidebarContent = (
     <aside className="w-56 bg-white border-r border-[#DDDBDA] min-h-[calc(100vh-88px)] flex-shrink-0">
       {/* Quick Create */}
       <div className="p-3 border-b border-[#DDDBDA]">
@@ -84,5 +92,38 @@ export default function Sidebar({ recentItems = [] }: { recentItems?: RecentItem
         )}
       </div>
     </aside>
+  );
+
+  return (
+    <>
+      {/* Desktop sidebar */}
+      <div className="hidden md:block">
+        {sidebarContent}
+      </div>
+
+      {/* Mobile overlay sidebar */}
+      {open && (
+        <div className="md:hidden">
+          {/* Backdrop */}
+          <div
+            className="fixed inset-0 bg-black/50 z-40"
+            onClick={onClose}
+          />
+          {/* Drawer */}
+          <div className="fixed left-0 top-0 h-full z-50 transition-transform">
+            <div className="relative">
+              <button
+                onClick={onClose}
+                className="absolute top-2 right-2 w-8 h-8 flex items-center justify-center text-[#706E6B] hover:text-[#3E3E3C] z-10"
+                title="Close sidebar"
+              >
+                <X className="w-5 h-5" />
+              </button>
+              {sidebarContent}
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }

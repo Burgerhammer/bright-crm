@@ -58,7 +58,7 @@ export default async function AccountsPage({
           <label className="text-xs font-semibold text-[#706E6B] uppercase tracking-wide">
             Filter by Type
           </label>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <Link
               href="/accounts"
               className={`bc-btn text-xs ${
@@ -89,13 +89,13 @@ export default async function AccountsPage({
             <thead>
               <tr>
                 <th>Name</th>
-                <th>Industry</th>
-                <th>Type</th>
-                <th>Phone</th>
+                <th className="hidden sm:table-cell">Industry</th>
+                <th className="hidden md:table-cell">Type</th>
+                <th className="hidden sm:table-cell">Phone</th>
                 <th>City / State</th>
-                <th>Revenue</th>
-                <th>Employees</th>
-                <th>Owner</th>
+                <th className="hidden lg:table-cell">Revenue</th>
+                <th className="hidden lg:table-cell">Employees</th>
+                <th className="hidden lg:table-cell">Owner</th>
               </tr>
             </thead>
             <tbody>
@@ -125,10 +125,10 @@ export default async function AccountsPage({
                         {account.name}
                       </Link>
                     </td>
-                    <td className="text-[#706E6B]">
+                    <td className="hidden sm:table-cell text-[#706E6B]">
                       {account.industry || "--"}
                     </td>
-                    <td>
+                    <td className="hidden md:table-cell">
                       {account.type ? (
                         <span
                           className={`bc-badge ${
@@ -142,7 +142,7 @@ export default async function AccountsPage({
                         <span className="text-[#706E6B]">--</span>
                       )}
                     </td>
-                    <td className="text-[#706E6B]">
+                    <td className="hidden sm:table-cell text-[#706E6B]">
                       {account.phone || "--"}
                     </td>
                     <td className="text-[#706E6B]">
@@ -150,15 +150,15 @@ export default async function AccountsPage({
                         ? `${account.city}, ${account.state}`
                         : account.city || account.state || "--"}
                     </td>
-                    <td className="text-[#706E6B]">
+                    <td className="hidden lg:table-cell text-[#706E6B]">
                       {account.annualRevenue
                         ? formatCurrency(account.annualRevenue)
                         : "--"}
                     </td>
-                    <td className="text-[#706E6B]">
+                    <td className="hidden lg:table-cell text-[#706E6B]">
                       {account.employees?.toLocaleString() || "--"}
                     </td>
-                    <td className="text-[#706E6B]">
+                    <td className="hidden lg:table-cell text-[#706E6B]">
                       {account.owner?.name || "--"}
                     </td>
                   </tr>

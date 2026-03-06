@@ -13,6 +13,7 @@ import {
   LogOut,
   Search,
   Phone,
+  Menu,
 } from "lucide-react";
 import { signOut } from "next-auth/react";
 import { cn } from "@/lib/utils";
@@ -30,9 +31,11 @@ const tabs = [
 export default function TopNav({
   userName,
   onOpenDialpad,
+  onToggleSidebar,
 }: {
   userName: string;
   onOpenDialpad?: () => void;
+  onToggleSidebar?: () => void;
 }) {
   const pathname = usePathname();
 
@@ -41,6 +44,13 @@ export default function TopNav({
       {/* Top bar with logo and user */}
       <div className="flex items-center justify-between px-4 py-2 border-b border-white/10">
         <div className="flex items-center gap-4">
+          <button
+            onClick={onToggleSidebar}
+            className="md:hidden flex items-center justify-center w-8 h-8"
+            title="Toggle sidebar"
+          >
+            <Menu className="w-5 h-5 text-white" />
+          </button>
           <Link href="/dashboard" className="flex items-center gap-2">
             <div className="w-7 h-7 bg-[#0070D2] rounded flex items-center justify-center font-bold text-sm">
               B
@@ -49,19 +59,19 @@ export default function TopNav({
               Bright CRM
             </span>
           </Link>
-          <div className="relative ml-4">
+          <div className="relative ml-4 hidden sm:block">
             <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/50" />
             <input
               type="text"
               placeholder="Search..."
-              className="bg-white/10 border border-white/20 rounded pl-8 pr-3 py-1.5 text-sm text-white placeholder-white/50 focus:outline-none focus:border-white/40 w-64"
+              className="bg-white/10 border border-white/20 rounded pl-8 pr-3 py-1.5 text-sm text-white placeholder-white/50 focus:outline-none focus:border-white/40 w-40 sm:w-64"
             />
           </div>
         </div>
         <div className="flex items-center gap-3">
           <button
             onClick={onOpenDialpad}
-            className="flex items-center justify-center w-8 h-8 rounded-full bg-green-500 hover:bg-green-600 transition-colors"
+            className="flex items-center justify-center w-10 h-10 sm:w-8 sm:h-8 rounded-full bg-green-500 hover:bg-green-600 transition-colors"
             title="Open Dialpad"
           >
             <Phone className="w-4 h-4 text-white" />
@@ -77,7 +87,7 @@ export default function TopNav({
       </div>
 
       {/* Tab bar */}
-      <div className="flex items-center px-2">
+      <div className="flex items-center px-2 overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
         {tabs.map((tab) => {
           const isActive =
             pathname === tab.href || pathname.startsWith(tab.href + "/");
@@ -87,7 +97,7 @@ export default function TopNav({
               key={tab.name}
               href={tab.href}
               className={cn(
-                "flex items-center gap-1.5 px-4 py-2 text-sm font-medium transition-colors relative",
+                "flex items-center gap-1.5 px-2 sm:px-4 py-2 text-sm font-medium transition-colors relative whitespace-nowrap",
                 isActive
                   ? "text-white"
                   : "text-white/70 hover:text-white hover:bg-white/5"

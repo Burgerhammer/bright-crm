@@ -40,12 +40,12 @@ export default async function ContactsPage() {
             <thead>
               <tr>
                 <th>Name</th>
-                <th>Title</th>
+                <th className="hidden sm:table-cell">Title</th>
                 <th>Account Name</th>
-                <th>Email</th>
+                <th className="hidden sm:table-cell">Email</th>
                 <th>Phone</th>
-                <th>Owner</th>
-                <th>Created</th>
+                <th className="hidden lg:table-cell">Owner</th>
+                <th className="hidden lg:table-cell">Created</th>
               </tr>
             </thead>
             <tbody>
@@ -69,7 +69,7 @@ export default async function ContactsPage() {
                         {contact.firstName} {contact.lastName}
                       </Link>
                     </td>
-                    <td>{contact.title || "-"}</td>
+                    <td className="hidden sm:table-cell">{contact.title || "-"}</td>
                     <td>
                       {contact.account ? (
                         <Link
@@ -82,10 +82,10 @@ export default async function ContactsPage() {
                         "-"
                       )}
                     </td>
-                    <td>{contact.email || "-"}</td>
+                    <td className="hidden sm:table-cell">{contact.email || "-"}</td>
                     <td>{contact.phone || "-"}</td>
-                    <td>{contact.owner?.name || "-"}</td>
-                    <td>{formatDate(contact.createdAt)}</td>
+                    <td className="hidden lg:table-cell">{contact.owner?.name || "-"}</td>
+                    <td className="hidden lg:table-cell">{formatDate(contact.createdAt)}</td>
                   </tr>
                 ))
               )}

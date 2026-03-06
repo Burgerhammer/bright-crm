@@ -38,7 +38,7 @@ export default async function LeadsPage({
   return (
     <div>
       {/* Page Header */}
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-0 mb-4">
         <h1 className="text-xl font-bold text-[#3E3E3C]">Leads</h1>
         <Link href="/leads/new" className="bc-btn bc-btn-primary">
           <Plus className="w-4 h-4" />
@@ -78,17 +78,17 @@ export default async function LeadsPage({
       </div>
 
       {/* Leads Table */}
-      <div className="bc-card overflow-hidden">
+      <div className="bc-card overflow-hidden overflow-x-auto">
         <table className="bc-table">
           <thead>
             <tr>
               <th>Name</th>
               <th>Company</th>
-              <th>Email</th>
+              <th className="hidden sm:table-cell">Email</th>
               <th>Status</th>
-              <th>Rating</th>
-              <th>Owner</th>
-              <th>Created</th>
+              <th className="hidden md:table-cell">Rating</th>
+              <th className="hidden lg:table-cell">Owner</th>
+              <th className="hidden lg:table-cell">Created</th>
             </tr>
           </thead>
           <tbody>
@@ -116,7 +116,7 @@ export default async function LeadsPage({
                     </Link>
                   </td>
                   <td className="text-[#3E3E3C]">{lead.company || "--"}</td>
-                  <td className="text-[#3E3E3C]">{lead.email || "--"}</td>
+                  <td className="hidden sm:table-cell text-[#3E3E3C]">{lead.email || "--"}</td>
                   <td>
                     <span
                       className={`bc-badge ${statusColors[lead.status] || "bg-gray-100 text-gray-600"}`}
@@ -124,7 +124,7 @@ export default async function LeadsPage({
                       {lead.status}
                     </span>
                   </td>
-                  <td>
+                  <td className="hidden md:table-cell">
                     {lead.rating ? (
                       <span className={ratingColors[lead.rating] || ""}>
                         {lead.rating}
@@ -133,10 +133,10 @@ export default async function LeadsPage({
                       <span className="text-[#706E6B]">--</span>
                     )}
                   </td>
-                  <td className="text-[#3E3E3C]">
+                  <td className="hidden lg:table-cell text-[#3E3E3C]">
                     {lead.owner?.name || "--"}
                   </td>
-                  <td className="text-[#706E6B] text-xs">
+                  <td className="hidden lg:table-cell text-[#706E6B] text-xs">
                     {formatDate(lead.createdAt)}
                   </td>
                 </tr>
