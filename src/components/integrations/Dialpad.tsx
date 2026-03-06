@@ -105,10 +105,25 @@ export default function Dialpad({
     setNumber((n) => n.slice(0, -1));
   };
 
+  const logCallActivity = async () => {
+    try {
+      await fetch("/api/activities", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type: "call",
+          subject: `Call to ${number}`,
+          status: "Completed",
+        }),
+      });
+    } catch {
+      // Best-effort logging
+    }
+  };
+
   const handleCall = async () => {
     if (!number.trim() || calling) return;
 
-    // Try Twilio first, fall back to native tel: link
     setCalling(true);
     setCallStatus("calling");
     setCallDuration(0);
@@ -123,12 +138,14 @@ export default function Dialpad({
       if (res.ok) {
         setCallStatus("connected");
       } else {
-        // Twilio not configured or call failed — use native dialer
+        // Twilio not configured — log activity and use native dialer
+        await logCallActivity();
         window.location.href = `tel:${number}`;
         setCallStatus("idle");
       }
     } catch {
-      // No integration available — use native dialer
+      // No integration — log activity and use native dialer
+      await logCallActivity();
       window.location.href = `tel:${number}`;
       setCallStatus("idle");
     }

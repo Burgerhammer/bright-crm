@@ -21,6 +21,25 @@ export default function CallButton({
   const [calling, setCalling] = useState(false);
   const [status, setStatus] = useState<"idle" | "calling" | "success" | "error">("idle");
 
+  const logCallActivity = async () => {
+    try {
+      await fetch("/api/activities", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type: "call",
+          subject: `Call to ${phoneNumber}`,
+          status: "Completed",
+          contactId,
+          dealId,
+          leadId,
+        }),
+      });
+    } catch {
+      // Activity logging is best-effort
+    }
+  };
+
   const handleCall = async () => {
     setCalling(true);
     setStatus("calling");
@@ -37,12 +56,16 @@ export default function CallButton({
         onCalled?.();
         setTimeout(() => setStatus("idle"), 3000);
       } else {
-        // Twilio not configured — use native dialer
+        // Twilio not configured — log activity and use native dialer
+        await logCallActivity();
+        onCalled?.();
         window.location.href = `tel:${phoneNumber}`;
         setStatus("idle");
       }
     } catch {
-      // No integration available — use native dialer
+      // No integration — log activity and use native dialer
+      await logCallActivity();
+      onCalled?.();
       window.location.href = `tel:${phoneNumber}`;
       setStatus("idle");
     }
