@@ -332,3 +332,80 @@ model CustomFieldValue {
 
   @@unique([customFieldId, entityId])
 }
+
+// ── Autonomous Agent System ──
+
+model AgentConfig {
+  id               String    @id @default(cuid())
+  agentType        String    @unique // prospector, enricher, outreach, follow_up, pipeline_mover
+  enabled          Boolean   @default(false)
+  approvalRequired Boolean   @default(true)
+  config           String?   // JSON — agent-specific settings
+  schedule         String?   // "every_hour", "every_6_hours", "daily"
+  lastRunAt        DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+}
+
+model AgentRun {
+  id          String    @id @default(cuid())
+  agentType   String
+  status      String    @default("running") // running, completed, failed
+  summary     String?
+  results     String?   // JSON
+  error       String?
+  startedAt   DateTime  @default(now())
+  completedAt DateTime?
+}
+
+model AgentActivity {
+  id          String   @id @default(cuid())
+  agentType   String
+  action      String   // found_lead, enriched_lead, sent_email, advanced_deal, booked_meeting, etc.
+  description String
+  entityType  String?  // Lead, Contact, Deal
+  entityId    String?
+  status      String   @default("completed") // completed, pending_approval, approved, rejected
+  metadata    String?  // JSON
+  createdAt   DateTime @default(now())
+}
+
+model IcpProfile {
+  id              String   @id @default(cuid())
+  name            String
+  industries      String?  // JSON array
+  companySize     String?  // "1-50", "51-200", "201-1000", "1000+"
+  roles           String?  // JSON array of target job titles
+  regions         String?  // JSON array
+  keywords        String?  // JSON array
+  excludeKeywords String?  // JSON array
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model OutreachSequence {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  status      String   @default("draft") // draft, active, paused, archived
+  steps       String   // JSON array of { stepNumber, delayDays, type, subject, body, intent }
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  enrollments OutreachEnrollment[]
+}
+
+model OutreachEnrollment {
+  id          String            @id @default(cuid())
+  sequenceId  String
+  sequence    OutreachSequence  @relation(fields: [sequenceId], references: [id], onDelete: Cascade)
+  entityType  String            // Lead, Contact
+  entityId    String
+  currentStep Int               @default(0)
+  status      String            @default("active") // active, paused, completed, replied, bounced, unsubscribed
+  enrolledAt  DateTime          @default(now())
+  lastStepAt  DateTime?
+  nextStepAt  DateTime?
+
+  @@unique([sequenceId, entityType, entityId])
+}

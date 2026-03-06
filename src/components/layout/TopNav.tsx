@@ -20,6 +20,7 @@ import {
   Loader2,
   Bell,
   CheckCheck,
+  Bot,
 } from "lucide-react";
 import { signOut } from "next-auth/react";
 import { cn } from "@/lib/utils";
@@ -52,6 +53,7 @@ const tabs = [
   { name: "Accounts", href: "/accounts", icon: Building2 },
   { name: "Deals", href: "/deals", icon: DollarSign },
   { name: "Tasks", href: "/tasks", icon: CheckSquare },
+  { name: "Autopilot", href: "/autopilot", icon: Bot },
   { name: "Import", href: "/import", icon: ArrowUpDown },
   { name: "Reports", href: "/reports", icon: BarChart3 },
   { name: "Settings", href: "/settings", icon: Settings },
