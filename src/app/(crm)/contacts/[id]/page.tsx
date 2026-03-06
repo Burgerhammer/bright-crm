@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
-import { Save, Trash2, ArrowLeft, DollarSign } from "lucide-react";
+import { Save, Pencil, ArrowLeft, DollarSign } from "lucide-react";
 import { formatDate, formatCurrency } from "@/lib/utils";
 import IntegrationActions from "@/components/integrations/IntegrationActions";
 
@@ -60,6 +60,7 @@ export default function ContactDetailPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [editing, setEditing] = useState(false);
   const [errors, setErrors] = useState<Record<string, string[]>>({});
   const [accounts, setAccounts] = useState<Account[]>([]);
 
@@ -170,6 +171,7 @@ export default function ContactDetailPage() {
 
       const updated = await res.json();
       setContact((prev) => (prev ? { ...prev, ...updated } : prev));
+      setEditing(false);
       setSaving(false);
     } catch {
       setErrors({ _form: ["An unexpected error occurred"] });
@@ -235,23 +237,54 @@ export default function ContactDetailPage() {
           </h1>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
-          <button
-            onClick={handleDelete}
-            disabled={deleting}
-            className="bc-btn bc-btn-destructive"
-          >
-            <Trash2 className="w-4 h-4" />
-            {deleting ? "Deleting..." : "Delete"}
-          </button>
-          <button
-            type="submit"
-            form="contact-form"
-            disabled={saving}
-            className="bc-btn bc-btn-primary"
-          >
-            <Save className="w-4 h-4" />
-            {saving ? "Saving..." : "Save"}
-          </button>
+          {editing ? (
+            <>
+              <button
+                type="button"
+                onClick={() => {
+                  setForm({
+                    firstName: contact.firstName || "",
+                    lastName: contact.lastName || "",
+                    title: contact.title || "",
+                    department: contact.department || "",
+                    email: contact.email || "",
+                    phone: contact.phone || "",
+                    mobile: contact.mobile || "",
+                    accountId: contact.accountId || "",
+                    address: contact.address || "",
+                    city: contact.city || "",
+                    state: contact.state || "",
+                    zip: contact.zip || "",
+                    country: contact.country || "",
+                    description: contact.description || "",
+                  });
+                  setEditing(false);
+                  setErrors({});
+                }}
+                className="bc-btn bc-btn-neutral"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                form="contact-form"
+                disabled={saving}
+                className="bc-btn bc-btn-primary"
+              >
+                <Save className="w-4 h-4" />
+                {saving ? "Saving..." : "Save"}
+              </button>
+            </>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setEditing(true)}
+              className="bc-btn bc-btn-neutral"
+            >
+              <Pencil className="w-4 h-4" />
+              Edit
+            </button>
+          )}
         </div>
       </div>
 
@@ -279,95 +312,131 @@ export default function ContactDetailPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label htmlFor="firstName" className="bc-label">
-                  First Name <span className="text-red-500">*</span>
+                  First Name {editing && <span className="text-red-500">*</span>}
                 </label>
-                <input
-                  id="firstName"
-                  name="firstName"
-                  type="text"
-                  value={form.firstName}
-                  onChange={handleChange}
-                  className="bc-input"
-                  required
-                />
-                {errors.firstName && (
-                  <p className="text-xs text-red-600 mt-1">{errors.firstName[0]}</p>
+                {editing ? (
+                  <>
+                    <input
+                      id="firstName"
+                      name="firstName"
+                      type="text"
+                      value={form.firstName}
+                      onChange={handleChange}
+                      className="bc-input"
+                      required
+                    />
+                    {errors.firstName && (
+                      <p className="text-xs text-red-600 mt-1">{errors.firstName[0]}</p>
+                    )}
+                  </>
+                ) : (
+                  <p className="text-sm text-[#3E3E3C] py-1">{contact.firstName || "--"}</p>
                 )}
               </div>
               <div>
                 <label htmlFor="lastName" className="bc-label">
-                  Last Name <span className="text-red-500">*</span>
+                  Last Name {editing && <span className="text-red-500">*</span>}
                 </label>
-                <input
-                  id="lastName"
-                  name="lastName"
-                  type="text"
-                  value={form.lastName}
-                  onChange={handleChange}
-                  className="bc-input"
-                  required
-                />
-                {errors.lastName && (
-                  <p className="text-xs text-red-600 mt-1">{errors.lastName[0]}</p>
+                {editing ? (
+                  <>
+                    <input
+                      id="lastName"
+                      name="lastName"
+                      type="text"
+                      value={form.lastName}
+                      onChange={handleChange}
+                      className="bc-input"
+                      required
+                    />
+                    {errors.lastName && (
+                      <p className="text-xs text-red-600 mt-1">{errors.lastName[0]}</p>
+                    )}
+                  </>
+                ) : (
+                  <p className="text-sm text-[#3E3E3C] py-1">{contact.lastName || "--"}</p>
                 )}
               </div>
               <div>
                 <label htmlFor="title" className="bc-label">Title</label>
-                <input
-                  id="title"
-                  name="title"
-                  type="text"
-                  value={form.title}
-                  onChange={handleChange}
-                  className="bc-input"
-                />
+                {editing ? (
+                  <input
+                    id="title"
+                    name="title"
+                    type="text"
+                    value={form.title}
+                    onChange={handleChange}
+                    className="bc-input"
+                  />
+                ) : (
+                  <p className="text-sm text-[#3E3E3C] py-1">{contact.title || "--"}</p>
+                )}
               </div>
               <div>
                 <label htmlFor="department" className="bc-label">Department</label>
-                <input
-                  id="department"
-                  name="department"
-                  type="text"
-                  value={form.department}
-                  onChange={handleChange}
-                  className="bc-input"
-                />
+                {editing ? (
+                  <input
+                    id="department"
+                    name="department"
+                    type="text"
+                    value={form.department}
+                    onChange={handleChange}
+                    className="bc-input"
+                  />
+                ) : (
+                  <p className="text-sm text-[#3E3E3C] py-1">{contact.department || "--"}</p>
+                )}
               </div>
               <div>
                 <label htmlFor="email" className="bc-label">Email</label>
-                <input
-                  id="email"
-                  name="email"
-                  type="email"
-                  value={form.email}
-                  onChange={handleChange}
-                  className="bc-input"
-                />
-                {errors.email && (
-                  <p className="text-xs text-red-600 mt-1">{errors.email[0]}</p>
+                {editing ? (
+                  <>
+                    <input
+                      id="email"
+                      name="email"
+                      type="email"
+                      value={form.email}
+                      onChange={handleChange}
+                      className="bc-input"
+                    />
+                    {errors.email && (
+                      <p className="text-xs text-red-600 mt-1">{errors.email[0]}</p>
+                    )}
+                  </>
+                ) : contact.email ? (
+                  <a href={`mailto:${contact.email}`} className="text-sm text-[#0070D2] hover:text-[#005FB2] py-1 block">{contact.email}</a>
+                ) : (
+                  <p className="text-sm text-[#3E3E3C] py-1">--</p>
                 )}
               </div>
               <div>
                 <label htmlFor="phone" className="bc-label">Phone</label>
-                <input
-                  id="phone"
-                  name="phone"
-                  type="tel"
-                  value={form.phone}
-                  onChange={handleChange}
-                  className="bc-input"
-                />
+                {editing ? (
+                  <input
+                    id="phone"
+                    name="phone"
+                    type="tel"
+                    value={form.phone}
+                    onChange={handleChange}
+                    className="bc-input"
+                  />
+                ) : (
+                  <p className="text-sm text-[#3E3E3C] py-1">{contact.phone || "--"}</p>
+                )}
               </div>
               <div>
                 <label htmlFor="mobile" className="bc-label">Mobile</label>
-                <input
-                  id="mobile"
-                  name="mobile"
-                  type="tel"
-                  value={form.mobile}
-                  onChange={handleChange}
-                  className="bc-input"
-                />
+                {editing ? (
+                  <input
+                    id="mobile"
+                    name="mobile"
+                    type="tel"
+                    value={form.mobile}
+                    onChange={handleChange}
+                    className="bc-input"
+                  />
+                ) : (
+                  <p className="text-sm text-[#3E3E3C] py-1">{contact.mobile || "--"}</p>
+                )}
               </div>
             </div>
           </div>
@@ -380,20 +449,24 @@ export default function ContactDetailPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label htmlFor="accountId" className="bc-label">Account Name</label>
-                <select
-                  id="accountId"
-                  name="accountId"
-                  value={form.accountId}
-                  onChange={handleChange}
-                  className="bc-input"
-                >
-                  <option value="">-- None --</option>
-                  {accounts.map((account) => (
-                    <option key={account.id} value={account.id}>
-                      {account.name}
-                    </option>
-                  ))}
-                </select>
+                {editing ? (
+                  <select
+                    id="accountId"
+                    name="accountId"
+                    value={form.accountId}
+                    onChange={handleChange}
+                    className="bc-input"
+                  >
+                    <option value="">-- None --</option>
+                    {accounts.map((account) => (
+                      <option key={account.id} value={account.id}>
+                        {account.name}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <p className="text-sm text-[#3E3E3C] py-1">{contact.account?.name || "--"}</p>
+                )}
               </div>
             </div>
           </div>
@@ -406,58 +479,78 @@ export default function ContactDetailPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="md:col-span-2">
                 <label htmlFor="address" className="bc-label">Street Address</label>
-                <input
-                  id="address"
-                  name="address"
-                  type="text"
-                  value={form.address}
-                  onChange={handleChange}
-                  className="bc-input"
-                />
+                {editing ? (
+                  <input
+                    id="address"
+                    name="address"
+                    type="text"
+                    value={form.address}
+                    onChange={handleChange}
+                    className="bc-input"
+                  />
+                ) : (
+                  <p className="text-sm text-[#3E3E3C] py-1">{contact.address || "--"}</p>
+                )}
               </div>
               <div>
                 <label htmlFor="city" className="bc-label">City</label>
-                <input
-                  id="city"
-                  name="city"
-                  type="text"
-                  value={form.city}
-                  onChange={handleChange}
-                  className="bc-input"
-                />
+                {editing ? (
+                  <input
+                    id="city"
+                    name="city"
+                    type="text"
+                    value={form.city}
+                    onChange={handleChange}
+                    className="bc-input"
+                  />
+                ) : (
+                  <p className="text-sm text-[#3E3E3C] py-1">{contact.city || "--"}</p>
+                )}
               </div>
               <div>
                 <label htmlFor="state" className="bc-label">State / Province</label>
-                <input
-                  id="state"
-                  name="state"
-                  type="text"
-                  value={form.state}
-                  onChange={handleChange}
-                  className="bc-input"
-                />
+                {editing ? (
+                  <input
+                    id="state"
+                    name="state"
+                    type="text"
+                    value={form.state}
+                    onChange={handleChange}
+                    className="bc-input"
+                  />
+                ) : (
+                  <p className="text-sm text-[#3E3E3C] py-1">{contact.state || "--"}</p>
+                )}
               </div>
               <div>
                 <label htmlFor="zip" className="bc-label">Zip / Postal Code</label>
-                <input
-                  id="zip"
-                  name="zip"
-                  type="text"
-                  value={form.zip}
-                  onChange={handleChange}
-                  className="bc-input"
-                />
+                {editing ? (
+                  <input
+                    id="zip"
+                    name="zip"
+                    type="text"
+                    value={form.zip}
+                    onChange={handleChange}
+                    className="bc-input"
+                  />
+                ) : (
+                  <p className="text-sm text-[#3E3E3C] py-1">{contact.zip || "--"}</p>
+                )}
               </div>
               <div>
                 <label htmlFor="country" className="bc-label">Country</label>
-                <input
-                  id="country"
-                  name="country"
-                  type="text"
-                  value={form.country}
-                  onChange={handleChange}
-                  className="bc-input"
-                />
+                {editing ? (
+                  <input
+                    id="country"
+                    name="country"
+                    type="text"
+                    value={form.country}
+                    onChange={handleChange}
+                    className="bc-input"
+                  />
+                ) : (
+                  <p className="text-sm text-[#3E3E3C] py-1">{contact.country || "--"}</p>
+                )}
               </div>
             </div>
           </div>
@@ -469,14 +562,18 @@ export default function ContactDetailPage() {
           <div className="p-4">
             <div>
               <label htmlFor="description" className="bc-label">Description</label>
-              <textarea
-                id="description"
-                name="description"
-                rows={4}
-                value={form.description}
-                onChange={handleChange}
-                className="bc-input"
-              />
+              {editing ? (
+                <textarea
+                  id="description"
+                  name="description"
+                  rows={4}
+                  value={form.description}
+                  onChange={handleChange}
+                  className="bc-input"
+                />
+              ) : (
+                <p className="text-sm text-[#3E3E3C] py-1 whitespace-pre-wrap">{contact.description || "No description provided."}</p>
+              )}
             </div>
           </div>
         </div>
@@ -544,6 +641,18 @@ export default function ContactDetailPage() {
             </tbody>
           </table>
         </div>
+      </div>
+
+      {/* Danger Zone */}
+      <div className="mt-8 pt-4 border-t border-[#DDDBDA]">
+        <button
+          type="button"
+          onClick={handleDelete}
+          disabled={deleting}
+          className="text-sm text-red-500 hover:text-red-700 transition-colors"
+        >
+          {deleting ? "Deleting..." : "Delete this contact"}
+        </button>
       </div>
     </div>
   );

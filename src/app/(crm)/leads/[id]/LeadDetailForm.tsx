@@ -6,8 +6,8 @@ import Link from "next/link";
 import {
   Save,
   Pencil,
-  Trash2,
   ArrowLeft,
+  ArrowRight,
   Clock,
   FileText,
 } from "lucide-react";
@@ -88,6 +88,14 @@ export default function LeadDetailForm({
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState("");
+  const [newNote, setNewNote] = useState("");
+  const [addingNote, setAddingNote] = useState(false);
+  const [localNotes, setLocalNotes] = useState(lead.notes);
+  const [showConvert, setShowConvert] = useState(false);
+  const [converting, setConverting] = useState(false);
+  const [convertDeal, setConvertDeal] = useState(false);
+  const [convertDealName, setConvertDealName] = useState("");
+  const [convertDealAmount, setConvertDealAmount] = useState("");
 
   const [form, setForm] = useState({
     firstName: lead.firstName,
@@ -161,6 +169,53 @@ export default function LeadDetailForm({
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to delete lead");
       setDeleting(false);
+    }
+  };
+
+  const handleConvert = async () => {
+    setConverting(true);
+    setError("");
+    try {
+      const res = await fetch(`/api/leads/${lead.id}/convert`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          createDeal: convertDeal,
+          dealName: convertDealName,
+          dealAmount: convertDealAmount,
+        }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || "Failed to convert lead");
+      }
+      const result = await res.json();
+      // Redirect to the new contact
+      router.push(`/contacts/${result.contact.id}`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to convert lead");
+      setConverting(false);
+      setShowConvert(false);
+    }
+  };
+
+  const handleAddNote = async () => {
+    if (!newNote.trim()) return;
+    setAddingNote(true);
+    try {
+      const res = await fetch("/api/notes", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ body: newNote, leadId: lead.id }),
+      });
+      if (!res.ok) throw new Error("Failed to add note");
+      const note = await res.json();
+      setLocalNotes((prev) => [{ ...note, createdAt: note.createdAt }, ...prev]);
+      setNewNote("");
+    } catch {
+      setError("Failed to add note");
+    } finally {
+      setAddingNote(false);
     }
   };
 
@@ -244,15 +299,21 @@ export default function LeadDetailForm({
                 <Pencil className="w-4 h-4" />
                 Edit
               </button>
-              <button
-                type="button"
-                onClick={handleDelete}
-                disabled={deleting}
-                className="bc-btn bc-btn-destructive"
-              >
-                <Trash2 className="w-4 h-4" />
-                {deleting ? "Deleting..." : "Delete"}
-              </button>
+              {lead.status !== "Converted" && (
+                <button
+                  type="button"
+                  onClick={() => setShowConvert(true)}
+                  className="bc-btn bc-btn-primary"
+                >
+                  <ArrowRight className="w-4 h-4" />
+                  Convert
+                </button>
+              )}
+              {lead.convertedContactId && (
+                <Link href={`/contacts/${lead.convertedContactId}`} className="bc-btn bc-btn-neutral text-sm">
+                  View Contact
+                </Link>
+              )}
             </>
           )}
         </div>
@@ -271,6 +332,82 @@ export default function LeadDetailForm({
       {error && (
         <div className="bg-red-50 text-red-700 text-sm px-4 py-3 rounded border border-red-200 mb-4">
           {error}
+        </div>
+      )}
+
+      {/* Convert Modal */}
+      {showConvert && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 p-6">
+            <h2 className="text-lg font-bold text-[#3E3E3C] mb-4">Convert Lead</h2>
+            <p className="text-sm text-[#706E6B] mb-4">
+              This will create a <strong>Contact</strong> and <strong>Account</strong> from this lead&apos;s information.
+            </p>
+
+            <div className="mb-4">
+              <p className="text-sm text-[#3E3E3C] mb-1">
+                <strong>Contact:</strong> {lead.firstName} {lead.lastName}
+              </p>
+              <p className="text-sm text-[#3E3E3C]">
+                <strong>Account:</strong> {lead.company || `${lead.firstName} ${lead.lastName}`}
+              </p>
+            </div>
+
+            <div className="border-t border-[#DDDBDA] pt-4 mb-4">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={convertDeal}
+                  onChange={(e) => setConvertDeal(e.target.checked)}
+                  className="rounded border-gray-300"
+                />
+                <span className="text-sm text-[#3E3E3C]">Also create a Deal</span>
+              </label>
+
+              {convertDeal && (
+                <div className="mt-3 space-y-3 pl-6">
+                  <div>
+                    <label className="bc-label">Deal Name</label>
+                    <input
+                      type="text"
+                      value={convertDealName}
+                      onChange={(e) => setConvertDealName(e.target.value)}
+                      placeholder={`${lead.firstName} ${lead.lastName} - Deal`}
+                      className="bc-input"
+                    />
+                  </div>
+                  <div>
+                    <label className="bc-label">Amount</label>
+                    <input
+                      type="number"
+                      value={convertDealAmount}
+                      onChange={(e) => setConvertDealAmount(e.target.value)}
+                      placeholder="0.00"
+                      className="bc-input"
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="flex items-center justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setShowConvert(false)}
+                className="bc-btn bc-btn-neutral"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleConvert}
+                disabled={converting}
+                className="bc-btn bc-btn-primary"
+              >
+                {converting ? "Converting..." : "Convert Lead"}
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
@@ -714,15 +851,32 @@ export default function LeadDetailForm({
       <div className="bc-card mb-4">
         <div className="bc-section-header flex items-center gap-2">
           <FileText className="w-4 h-4" />
-          Notes ({lead.notes.length})
+          Notes ({localNotes.length})
         </div>
-        {lead.notes.length === 0 ? (
+        <div className="p-4 border-b border-[#DDDBDA]">
+          <textarea
+            value={newNote}
+            onChange={(e) => setNewNote(e.target.value)}
+            placeholder="Add a note..."
+            rows={3}
+            className="bc-input mb-2"
+          />
+          <button
+            type="button"
+            onClick={handleAddNote}
+            disabled={addingNote || !newNote.trim()}
+            className="bc-btn bc-btn-primary text-sm"
+          >
+            {addingNote ? "Adding..." : "Add Note"}
+          </button>
+        </div>
+        {localNotes.length === 0 ? (
           <div className="p-4 text-sm text-[#706E6B] italic">
             No notes yet.
           </div>
         ) : (
           <div className="divide-y divide-[#DDDBDA]">
-            {lead.notes.map((note) => (
+            {localNotes.map((note) => (
               <div key={note.id} className="p-4">
                 <div className="flex items-center gap-2 mb-1">
                   <span className="text-xs font-semibold text-[#706E6B]">
@@ -739,6 +893,18 @@ export default function LeadDetailForm({
             ))}
           </div>
         )}
+      </div>
+
+      {/* Danger Zone */}
+      <div className="mt-8 pt-4 border-t border-[#DDDBDA]">
+        <button
+          type="button"
+          onClick={handleDelete}
+          disabled={deleting}
+          className="text-sm text-red-500 hover:text-red-700 transition-colors"
+        >
+          {deleting ? "Deleting..." : "Delete this lead"}
+        </button>
       </div>
     </div>
   );
