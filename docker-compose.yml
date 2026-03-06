@@ -1,12 +1,30 @@
 services:
+  # One-shot schema sync (run on first setup, and whenever prisma schema changes)
+  migrate:
+    build:
+      context: .
+      target: builder
+    command: ["sh", "-lc", "npx prisma db push"]
+    environment:
+      - DATABASE_URL=file:/app/data/bright.db
+      - NEXTAUTH_SECRET=${NEXTAUTH_SECRET}
+      - NEXTAUTH_URL=${NEXTAUTH_URL:-http://localhost:3000}
+      # Required for LAN/self-hosting when accessing via IP/hostname
+      - AUTH_TRUST_HOST=true
+    volumes:
+      - crm-data:/app/data
+
   bright-crm:
-    build: .
+    build:
+      context: .
+      target: runner
     ports:
       - "3000:3000"
     environment:
       - DATABASE_URL=file:/app/data/bright.db
       - NEXTAUTH_SECRET=${NEXTAUTH_SECRET}
       - NEXTAUTH_URL=${NEXTAUTH_URL:-http://localhost:3000}
+      - AUTH_TRUST_HOST=true
     volumes:
       - crm-data:/app/data
     restart: unless-stopped

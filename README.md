@@ -68,21 +68,29 @@ Login with:
 
 ### Docker
 
-Run it with Docker for always-on access (great for a home server or Mac Mini):
+Run it with Docker for always-on access (great for a home server or Mac mini):
 
 ```bash
 git clone https://github.com/Burgerhammer/bright-crm.git
 cd bright-crm
 
-# Create .env with your secret
+# Create .env
 echo "NEXTAUTH_SECRET=$(openssl rand -base64 32)" > .env
-echo "NEXTAUTH_URL=http://YOUR_MAC_MINI_IP:3000" >> .env
+echo "NEXTAUTH_URL=http://YOUR_LAN_IP:3000" >> .env
 
 # Build and start
-docker compose up -d
+docker compose up -d --build
+
+# One-time: sync Prisma schema to the SQLite database volume
+# (Run again after schema changes)
+docker compose run --rm migrate
 ```
 
-Access from any device on your network at `http://YOUR_MAC_MINI_IP:3000`. Data persists in a Docker volume.
+Access from any device on your network at `http://YOUR_LAN_IP:3000`.
+
+Notes:
+- For LAN/self-hosting via IP/hostname, the default `docker-compose.yml` enables `AUTH_TRUST_HOST=true` to avoid Auth.js "UntrustedHost" errors.
+- Data persists in the `crm-data` Docker volume.
 
 ## Deploy to a VPS (Always-On)
 
