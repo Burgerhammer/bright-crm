@@ -156,22 +156,22 @@ export default function CoPilot({ context }: CoPilotProps) {
       {!open && (
         <button
           onClick={() => setOpen(true)}
-          className="fixed bottom-6 right-6 z-50 w-14 h-14 bg-[#0070D2] text-white rounded-full shadow-lg flex items-center justify-center hover:bg-[#005FB2] transition-colors group"
+          className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-50 w-12 h-12 sm:w-14 sm:h-14 bg-[#0070D2] text-white rounded-full shadow-lg flex items-center justify-center hover:bg-[#005FB2] transition-colors group"
           aria-label="Open AI CoPilot"
         >
-          <span className="absolute w-14 h-14 rounded-full bg-[#0070D2] animate-ping opacity-20 group-hover:opacity-30" />
-          <Sparkles className="w-6 h-6 relative z-10" />
+          <span className="absolute w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-[#0070D2] animate-ping opacity-20 group-hover:opacity-30" />
+          <Sparkles className="w-5 h-5 sm:w-6 sm:h-6 relative z-10" />
         </button>
       )}
 
-      {/* Slide-out panel */}
+      {/* Slide-out panel — full screen on mobile, side panel on desktop */}
       <div
-        className={`fixed top-[57px] right-0 bottom-0 z-40 w-[400px] max-w-full bg-white shadow-xl border-l border-[#DDDBDA] flex flex-col transition-transform duration-300 ease-in-out ${
+        className={`fixed inset-0 sm:inset-auto sm:top-0 sm:right-0 sm:bottom-0 z-50 sm:z-40 w-full sm:w-[400px] bg-white shadow-xl sm:border-l border-[#DDDBDA] flex flex-col transition-transform duration-300 ease-in-out ${
           open ? "translate-x-0" : "translate-x-full"
         }`}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-4 py-3 border-b border-[#DDDBDA] bg-white">
+        <div className="flex items-center justify-between px-4 pt-[env(safe-area-inset-top,0px)] py-3 border-b border-[#DDDBDA] bg-white">
           <div className="flex items-center gap-2">
             <Sparkles className="w-5 h-5 text-[#0070D2]" />
             <h2 className="font-semibold text-[#3E3E3C]">AI CoPilot</h2>
@@ -276,7 +276,7 @@ export default function CoPilot({ context }: CoPilotProps) {
 
         {/* Input area */}
         {error !== "api_key_missing" && (
-          <div className="border-t border-[#DDDBDA] p-3 bg-white">
+          <div className="border-t border-[#DDDBDA] p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] bg-white">
             {messages.length > 0 && (
               <div className="flex flex-wrap gap-1.5 mb-2">
                 {visibleActions.map((action) => (
